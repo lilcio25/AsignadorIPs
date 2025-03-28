@@ -1,0 +1,253 @@
+@model List<ASIGNADORIPS.Models.Equipo>
+@{
+    ViewData["Title"] = "Listado de Equipos";
+    Layout = "_Layout";
+    var rol = Context.Session.GetString("Rol");
+}
+
+<h2 class="mb-4">Listado de Equipos Registrados</h2>
+
+<!-- Filtros -->
+<div class="row mb-3">
+    <div class="col-md-2">
+        <label class="form-label">Piso</label>
+        <select class="form-select form-select-sm filtro" data-col="0">
+            <option value="">Todos</option>
+            @for (int i = 1; i <= 11; i++)
+            {
+                <option value="@i">@i</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Nombre Equipo</label>
+        <input type="text" class="form-control form-control-sm filtro" data-col="1" placeholder="Buscar...">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Usuario</label>
+        <input type="text" class="form-control form-control-sm filtro" data-col="12" placeholder="Buscar...">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">IP</label>
+        <input type="text" class="form-control form-control-sm filtro" data-col="10" placeholder="Buscar...">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">SO</label>
+        <input type="text" class="form-control form-control-sm filtro" data-col="7" placeholder="Buscar...">
+    </div>
+    <div class="col-md-2">
+        <label class="form-label">Procesador</label>
+        <input type="text" class="form-control form-control-sm filtro" data-col="4" placeholder="Buscar...">
+    </div>
+</div>
+
+<!-- Tabla -->
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover table-bordered align-middle text-nowrap">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th class="sortable" data-col="0">Piso <span class="sort-icon">▲▼</span></th>
+                        <th>Nombre</th>
+                        <th>Cod. Inv.</th>
+                        <th>Marca</th>
+                        <th>Proc.</th>
+                        <th>RAM</th>
+                        <th>Disco</th>
+                        <th>S.O</th>
+                        <th>Cod. Mon.</th>
+                        <th>Seg. Red</th>
+                        <th>IP</th>
+                        <th>Office</th>
+                        <th>User</th>
+                        <th>Nombre User</th>
+                        <th>Anydesk</th>
+                        @if ((rol ?? "").Trim().ToLower() == "administrador")
+                        {
+                            <th>Acciones</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var equipo in Model)
+                    {
+                        <tr data-id="@equipo.Id">
+                            <td>@equipo.Piso</td>
+                            <td>@equipo.NombreEquipo</td>
+                            <td>@equipo.CodigoInventario</td>
+                            <td>@equipo.Marca</td>
+                            <td>@equipo.Procesador</td>
+                            <td>@equipo.RAM</td>
+                            <td>@equipo.Disco</td>
+                            <td>@equipo.Windows</td>
+                            <td>@equipo.CodigoMonitor</td>
+                            <td>@equipo.SegmentoRed</td>
+                            <td>@equipo.IP</td>
+                            <td>@equipo.Office</td>
+                            <td>@equipo.UsuarioAsignado</td>
+                            <td>@equipo.NombreUsuario</td>
+                            <td>@equipo.Anydesk</td>
+                            @if ((rol ?? "").Trim().ToLower() == "administrador")
+                            {
+                                <td class="text-center">
+                                    <button class="btn btn-sm btn-primary btn-editar" title="Editar"><i class="mdi mdi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-success btn-guardar d-none" title="Guardar"><i class="mdi mdi-content-save"></i></button>
+                                    <button class="btn btn-sm btn-secondary btn-cancelar d-none" title="Cancelar"><i class="mdi mdi-close-circle-outline"></i></button>
+                                    <button class="btn btn-sm btn-danger btn-eliminar" title="Eliminar"><i class="mdi mdi-delete"></i></button>
+                                </td>
+                            }
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", function () {
+        const rol = "@(Context.Session.GetString("Rol")?.ToLower() ?? "")";
+
+        if (rol === "administrador") {
+            const filas = document.querySelectorAll("tbody tr");
+
+            filas.forEach(fila => {
+                const btnEditar = fila.querySelector(".btn-editar");
+                const btnGuardar = fila.querySelector(".btn-guardar");
+                const btnCancelar = fila.querySelector(".btn-cancelar");
+                const btnEliminar = fila.querySelector(".btn-eliminar");
+
+                let valoresOriginales = [];
+
+                btnEditar?.addEventListener("click", () => {
+                    valoresOriginales = [];
+                    const celdas = fila.querySelectorAll("td");
+                    for (let i = 0; i < 15; i++) {
+                        const texto = celdas[i].textContent.trim();
+                        valoresOriginales.push(texto);
+                        celdas[i].innerHTML = `<input type="text" class="form-control form-control-sm w-100" value="${texto}" style="min-width:150px;" />`;
+                    }
+                    btnEditar.classList.add("d-none");
+                    btnGuardar.classList.remove("d-none");
+                    btnCancelar.classList.remove("d-none");
+                });
+
+                btnCancelar?.addEventListener("click", () => {
+                    const celdas = fila.querySelectorAll("td");
+                    for (let i = 0; i < 15; i++) {
+                        celdas[i].textContent = valoresOriginales[i];
+                    }
+                    btnEditar.classList.remove("d-none");
+                    btnGuardar.classList.add("d-none");
+                    btnCancelar.classList.add("d-none");
+                });
+
+                btnGuardar?.addEventListener("click", () => {
+                    const inputs = fila.querySelectorAll("input");
+                    const data = {
+                        id: fila.dataset.id,
+                        piso: inputs[0].value,
+                        nombreEquipo: inputs[1].value,
+                        codigoInventario: inputs[2].value,
+                        marca: inputs[3].value,
+                        procesador: inputs[4].value,
+                        ram: inputs[5].value,
+                        disco: inputs[6].value,
+                        windows: inputs[7].value,
+                        codigoMonitor: inputs[8].value,
+                        segmentoRed: inputs[9].value,
+                        ip: inputs[10].value,
+                        office: inputs[11].value,
+                        usuarioAsignado: inputs[12].value,
+                        nombreUsuario: inputs[13].value,
+                        anydesk: inputs[14].value
+                    };
+
+                    fetch("/Equipo/UpdateInline", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify(data)
+                    }).then(resp => {
+                        if (resp.ok) {
+                            inputs.forEach((input, index) => {
+                                input.parentElement.textContent = input.value;
+                            });
+                            btnEditar.classList.remove("d-none");
+                            btnGuardar.classList.add("d-none");
+                            btnCancelar.classList.add("d-none");
+                        } else {
+                            alert("Error al guardar los cambios");
+                        }
+                    });
+                });
+
+                btnEliminar?.addEventListener("click", () => {
+                    if (confirm("¿Estás seguro de que deseas eliminar este equipo?")) {
+                        fetch(`/Equipo/DeleteInline/${fila.dataset.id}`, {
+                            method: "POST"
+                        }).then(resp => {
+                            if (resp.ok) {
+                                fila.remove();
+                            } else {
+                                alert("Error al eliminar el equipo.");
+                            }
+                        });
+                    }
+                });
+            });
+        }
+
+        // Filtros
+        document.querySelectorAll(".filtro").forEach(input => {
+            input.addEventListener("input", function () {
+                const filtros = document.querySelectorAll(".filtro");
+                const filas = document.querySelectorAll("tbody tr");
+
+                filas.forEach(fila => {
+                    let mostrar = true;
+                    filtros.forEach(filtro => {
+                        const col = parseInt(filtro.dataset.col);
+                        const val = filtro.value.toLowerCase();
+                        const celda = fila.children[col].textContent.toLowerCase();
+                        if (val && col === 0) {
+                            if (celda !== val) {
+                                mostrar = false;
+                            }
+                        } else if (val && !celda.includes(val)) {
+                            mostrar = false;
+                        }
+                    });
+                    fila.style.display = mostrar ? "" : "none";
+                });
+            });
+        });
+
+        // Ordenar columna Piso
+        document.querySelectorAll("th.sortable").forEach(th => {
+            let asc = true;
+            th.addEventListener("click", () => {
+                const table = th.closest("table");
+                const tbody = table.querySelector("tbody");
+                const index = parseInt(th.dataset.col);
+
+                const rows = Array.from(tbody.querySelectorAll("tr"));
+
+                rows.sort((a, b) => {
+                    const valA = a.children[index].textContent.trim();
+                    const valB = b.children[index].textContent.trim();
+                    return asc ? valA.localeCompare(valB, undefined, { numeric: true }) : valB.localeCompare(valA, undefined, { numeric: true });
+                });
+
+                rows.forEach(row => tbody.appendChild(row));
+                asc = !asc;
+
+                // Cambiar icono
+                const icon = th.querySelector(".sort-icon");
+                if (icon) icon.textContent = asc ? "▲▼" : "▼▲";
+            });
+        });
+    });
+</script>
+}

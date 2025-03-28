@@ -1,0 +1,183 @@
+/* ------------------ */
+/* General structure  */
+/* ------------------ */
+
+body {
+    background-color: #f4f3f8;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.main-panel .content-wrapper {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+.navbar.default-layout-navbar {
+    justify-content: space-between;
+}
+
+.navbar-brand-wrapper {
+    min-width: 220px;
+}
+
+.page-body-wrapper {
+    display: flex;
+    transition: all 0.3s ease;
+}
+
+.sidebar {
+    transition: all 0.3s ease;
+    width: 250px;
+    position: fixed;
+    top: 120px;
+    left: 0;
+    bottom: 0;
+    z-index: 1000;
+    overflow-y: auto;
+    background-color: #fff;
+}
+
+.sidebar-hidden .sidebar {
+    width: 0;
+    overflow: hidden;
+}
+
+.main-panel {
+    transition: all 0.3s ease;
+    margin-left: 250px;
+    width: 100%;
+}
+
+.sidebar-hidden .main-panel {
+    margin-left: 0;
+}
+
+#bodyWrapper {
+    padding-top: 120px;
+}
+
+
+/* ------------------------ */
+/* Sidebar Navigation Style */
+/* ------------------------ */
+
+.nav .nav-item .nav-link {
+    color: #5c5c5c !important;
+    font-weight: normal;
+    display: flex;
+    align-items: center;
+    font-size: 14px;
+    padding: 8px 16px;
+    border-radius: 6px;
+    transition: background-color 0.2s, color 0.2s;
+}
+
+.nav .nav-item .nav-link i {
+    color: #5c5c5c !important;
+    margin-right: 8px;
+    font-size: 18px;
+}
+
+.nav .nav-item .nav-link:hover {
+    color: #000 !important;
+    background-color: #eee;
+    font-weight: bold;
+}
+
+.nav .nav-item .nav-link:hover i {
+    color: #000 !important;
+}
+
+
+/* ---------------------- */
+/* Active State Highlight */
+/* ---------------------- */
+
+.nav .nav-item .nav-link.active {
+    color: #7c4dff !important;
+    font-weight: bold;
+    background-color: #f0ebff;
+}
+
+.nav .nav-item .nav-link.active i {
+    color: #7c4dff !important;
+}
+
+
+/* --------------------- */
+/* Table and Cards Style */
+/* --------------------- */
+
+.table th,
+.table td {
+    vertical-align: middle;
+    font-size: 14px;
+}
+
+.table thead th {
+    background-color: #2e2e2e;
+    color: white;
+}
+
+.card {
+    border: 1px solid #ddd;
+    border-radius: 6px;
+}
+
+
+/* ------------------ */
+/* Buttons            */
+/* ------------------ */
+
+.btn {
+    border-radius: 4px;
+    font-size: 13px;
+}
+
+.btn-sm {
+    padding: 4px 8px;
+}
+
+.btn-primary {
+    background-color: #7c4dff;
+    border-color: #7c4dff;
+}
+
+.btn-primary:hover {
+    background-color: #693de0;
+    border-color: #693de0;
+}
+
+.btn-outline-danger {
+    border-color: #e53935;
+    color: #e53935;
+}
+
+.btn-outline-danger:hover {
+    background-color: #e53935;
+    color: white;
+}
+
+
+/* ------------------ */
+/* Footer             */
+/* ------------------ */
+
+.footer {
+    padding: 20px;
+    background-color: #f8f9fa;
+    font-size: 13px;
+    color: #666;
+}
+
+
+/* ------------------ */
+/* Responsive Helpers */
+/* ------------------ */
+
+@media (max-width: 768px) {
+    .main-panel {
+        margin-left: 0 !important;
+    }
+}

@@ -1,0 +1,63 @@
+@model ASIGNADORIPS.Models.Usuario
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewData["Title"] - Control Informática</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="~/assets/vendors/css/vendor.bundle.base.css" />
+    <link rel="stylesheet" href="~/assets/css/style.css" />
+    <link rel="shortcut icon" href="~/assets/images/favicon.png" />
+    <style>
+        body {
+            background-color: #f4f4f4;
+        }
+        .login-container {
+            max-width: 400px;
+            margin: 8% auto;
+            padding: 30px;
+            background: #fff;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        }
+        .login-title {
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+        .form-control {
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <h3 class="text-center login-title">Iniciar Sesión</h3>
+
+        @if (ViewBag.Error != null)
+        {
+            <div class="alert alert-danger text-center">
+                @ViewBag.Error
+            </div>
+        }
+
+        <form asp-action="Login" method="post">
+            <div class="form-group">
+                <label for="NombreUsuario">Usuario</label>
+                <input asp-for="NombreUsuario" class="form-control" placeholder="Nombre de usuario" required />
+            </div>
+            <div class="form-group">
+                <label for="Contraseña">Contraseña</label>
+                <input asp-for="Contraseña" class="form-control" type="password" placeholder="Contraseña" required />
+            </div>
+            <button type="submit" class="btn btn-primary w-100">Ingresar</button>
+        </form>
+    </div>
+
+    <script src="~/assets/vendors/js/vendor.bundle.base.js"></script>
+</body>
+</html>

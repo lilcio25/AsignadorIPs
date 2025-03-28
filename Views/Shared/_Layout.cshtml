@@ -1,0 +1,159 @@
+﻿@{
+    Layout = null;
+    var rol = Context.Session.GetString("Rol");
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var action = ViewContext.RouteData.Values["action"]?.ToString();
+}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <title>Control Informática</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="stylesheet" href="@Url.Content("~/assets/vendors/mdi/css/materialdesignicons.min.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/assets/vendors/ti-icons/css/themify-icons.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/assets/vendors/css/vendor.bundle.base.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/assets/vendors/font-awesome/css/font-awesome.min.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/assets/css/style.css")" />
+    <link rel="stylesheet" href="@Url.Content("~/assets/css/custom-theme.css")" /> <!-- ✅ custom CSS agregado correctamente -->
+    <link rel="shortcut icon" href="@Url.Content("~/assets/images/favicon.png")" />
+    <style>
+        .main-panel .content-wrapper { max-width: 100%; margin: 0 auto; }
+        .navbar.default-layout-navbar { justify-content: space-between; }
+        .navbar-brand-wrapper { min-width: 220px; }
+        .navbar-toggler { margin-left: 15px; }
+        .page-body-wrapper { display: flex; transition: all 0.3s ease; }
+        .sidebar {
+            transition: all 0.3s ease;
+            width: 250px;
+            position: fixed;
+            top: 120px;
+            left: 0;
+            bottom: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            background-color: #fff;
+        }
+        .sidebar-hidden .sidebar { width: 0; overflow: hidden; }
+        .main-panel { transition: all 0.3s ease; margin-left: 250px; width: 100%; }
+        .sidebar-hidden .main-panel { margin-left: 0; }
+        #bodyWrapper { padding-top: 120px; }
+        .nav-link.active {
+            font-weight: bold;
+            color: #7c4dff !important;
+        }
+        .nav .nav-item .nav-link {
+            color: #555;
+        }
+    </style>
+</head>
+<body>
+<div class="container-scroller">
+    <!-- Navbar -->
+    <nav class="navbar default-layout-navbar col-lg-12 col-12 p-0 fixed-top d-flex flex-row">
+        <div class="text-center navbar-brand-wrapper d-flex align-items-center justify-content-start">
+            <a class="navbar-brand brand-logo d-flex align-items-center" href="@Url.Action("Index", "Equipo")" style="padding-left: 25px;">
+                <img src="~/assets/images/clem3.png" alt="CLEM Logo" style="height: 120px; width: auto;" />
+            </a>
+            <button class="navbar-toggler align-self-center" type="button" onclick="toggleSidebar()">
+                <span class="mdi mdi-menu"></span>
+            </button>
+        </div>
+        <div class="navbar-menu-wrapper d-flex align-items-center justify-content-end pe-4">
+            <a href="@Url.Action("Logout", "Account")" class="btn btn-sm btn-outline-danger">
+                <i class="mdi mdi-logout"></i> Cerrar sesión
+            </a>
+        </div>
+    </nav>
+
+    <!-- Sidebar + Contenido -->
+    <div class="container-fluid page-body-wrapper" id="bodyWrapper">
+        <!-- Sidebar -->
+        <nav class="sidebar sidebar-offcanvas" id="sidebar">
+            <ul class="nav mt-3">
+                <li class="nav-item">
+                    <a class="nav-link" data-bs-toggle="collapse" href="#registroSubmenu" role="button" aria-expanded="@(controller == "Equipo" ? "true" : "false")">
+                        <i class="mdi mdi-clipboard-text menu-icon"></i>
+                        <span class="menu-title">Registro</span>
+                        <i class="menu-arrow"></i>
+                    </a>
+                    <div class="collapse @(controller == "Equipo" ? "show" : "")" id="registroSubmenu">
+                        <ul class="nav flex-column sub-menu">
+                            <li class="nav-item">
+                                <a class="nav-link @(controller == "Equipo" && action == "Index" ? "active" : "")" href="@Url.Action("Index", "Equipo")">
+                                    <i class="mdi mdi-monitor"></i> Equipos
+                                </a>
+                            </li>
+                            @if ((rol ?? "").Trim().ToLower() == "administrador")
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link @(controller == "Equipo" && action == "Create" ? "active" : "")" href="@Url.Action("Create", "Equipo")">
+                                        <i class="mdi mdi-plus-box-outline"></i> Registrar Equipo
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </div>
+                </li>
+
+                @* Mostrar sección Ingresos solo si el usuario NO es observador *@
+                @if (!string.IsNullOrEmpty(rol) && rol.Trim().ToLower() != "observador")
+                {
+                    <li class="nav-item">
+                        <a class="nav-link" data-bs-toggle="collapse" href="#ingresosSubmenu" role="button" aria-expanded="@(controller == "Usuario" ? "true" : "false")">
+                            <i class="mdi mdi-account-multiple menu-icon"></i>
+                            <span class="menu-title">Ingresos</span>
+                            <i class="menu-arrow"></i>
+                        </a>
+                        <div class="collapse @(controller == "Usuario" ? "show" : "")" id="ingresosSubmenu">
+                            <ul class="nav flex-column sub-menu">
+                                <li class="nav-item">
+                                    <a class="nav-link @(controller == "Usuario" ? "active" : "")" href="@Url.Action("Index", "Usuario")">
+                                        <i class="mdi mdi-account-circle"></i> Usuarios
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <!-- Contenido principal -->
+        <div class="main-panel">
+            <div class="content-wrapper">
+                @RenderBody()
+            </div>
+            <footer class="footer">
+                <div class="d-sm-flex justify-content-center justify-content-sm-between">
+                    <span class="text-muted text-center text-sm-left d-block d-sm-inline-block">
+                        © @DateTime.Now.Year Practicante Claudio Acevedo.
+                    </span>
+                    <span class="float-none float-sm-right d-block mt-1 mt-sm-0 text-center">
+                        Hecho con <i class="mdi mdi-heart text-danger"></i>
+                    </span>
+                </div>
+            </footer>
+        </div>
+    </div>
+</div>
+
+<!-- Scripts -->
+<script src="@Url.Content("~/assets/vendors/js/vendor.bundle.base.js")"></script>
+<script src="@Url.Content("~/assets/vendors/chart.js/chart.umd.js")"></script>
+<script src="@Url.Content("~/assets/vendors/bootstrap-datepicker/bootstrap-datepicker.min.js")"></script>
+<script src="@Url.Content("~/assets/js/off-canvas.js")"></script>
+<script src="@Url.Content("~/assets/js/misc.js")"></script>
+<script src="@Url.Content("~/assets/js/settings.js")"></script>
+<script src="@Url.Content("~/assets/js/todolist.js")"></script>
+<script src="@Url.Content("~/assets/js/jquery.cookie.js")"></script>
+<script src="@Url.Content("~/assets/js/dashboard.js")"></script>
+<script>
+    function toggleSidebar() {
+        document.getElementById("bodyWrapper").classList.toggle("sidebar-hidden");
+    }
+</script>
+
+@RenderSection("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,116 @@
+@model ASIGNADORIPS.Models.Equipo
+
+@{
+    ViewData["Title"] = "Registrar Equipo";
+    Layout = "_Layout";
+
+    var rol = Context.Session.GetString("Rol");
+    if (rol?.ToLower() != "administrador")
+    {
+        <script>
+            window.location.href = "/Equipo/Index";
+        </script>
+    }
+}
+
+<h2 class="mb-4">Registrar Nuevo Equipo</h2>
+
+<form asp-action="Create" method="post" class="row g-3">
+    <div class="col-md-2">
+        <label asp-for="Piso" class="form-label">Piso</label>
+        <input asp-for="Piso" class="form-control" id="Piso" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="NombreEquipo" class="form-label">Nombre del equipo</label>
+        <input asp-for="NombreEquipo" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="CodigoInventario" class="form-label">Código de Inventario</label>
+        <input asp-for="CodigoInventario" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Marca" class="form-label">Marca</label>
+        <input asp-for="Marca" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Procesador" class="form-label">Procesador</label>
+        <input asp-for="Procesador" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="RAM" class="form-label">RAM</label>
+        <input asp-for="RAM" class="form-control" />
+    </div>
+    <div class="col-md-2">
+        <label asp-for="Disco" class="form-label">Disco</label>
+        <input asp-for="Disco" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Windows" class="form-label">Windows</label>
+        <input asp-for="Windows" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="CodigoMonitor" class="form-label">Código Inventario Monitor</label>
+        <input asp-for="CodigoMonitor" class="form-control" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="SegmentoRed" class="form-label">Segmento de Red</label>
+        <input asp-for="SegmentoRed" class="form-control" id="SegmentoRed" readonly />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="IP" class="form-label">IP</label>
+        <input asp-for="IP" class="form-control" id="IP" />
+    </div>
+    <div class="col-md-3">
+        <label asp-for="Office" class="form-label">Office</label>
+        <input asp-for="Office" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="UsuarioAsignado" class="form-label">Usuario Asignado</label>
+        <input asp-for="UsuarioAsignado" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="NombreUsuario" class="form-label">Nombre de Usuario</label>
+        <input asp-for="NombreUsuario" class="form-control" />
+    </div>
+    <div class="col-md-4">
+        <label asp-for="Anydesk" class="form-label">Código de Anydesk</label>
+        <input asp-for="Anydesk" class="form-control" />
+    </div>
+
+    <div class="col-12">
+        <button type="submit" class="btn btn-primary">Guardar</button>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            const pisoInput = document.querySelector("#Piso");
+            const segmentoInput = document.querySelector("#SegmentoRed");
+            const ipInput = document.querySelector("#IP");
+
+            pisoInput.addEventListener("input", () => {
+                const piso = parseInt(pisoInput.value);
+                let segmento = "";
+
+                if ([1, 5, 6, 7].includes(piso)) segmento = "200";
+                else if ([2, 8, 9].includes(piso)) segmento = "190";
+                else if ([3, 4, 10, 11].includes(piso)) segmento = "180";
+
+                segmentoInput.value = segmento;
+
+                if (segmento !== "") {
+                    fetch(`/Equipo/ObtenerIpDisponible?piso=${piso}`)
+                        .then(res => res.ok ? res.json() : Promise.reject("Error al obtener IP"))
+                        .then(data => {
+                            ipInput.value = data.ip;
+                        })
+                        .catch(err => {
+                            console.error(err);
+                            ipInput.value = "";
+                        });
+                }
+            });
+        });
+    </script>
+}

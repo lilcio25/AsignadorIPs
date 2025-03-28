@@ -1,0 +1,153 @@
+@model List<ASIGNADORIPS.Models.Usuario>
+@{
+    ViewData["Title"] = "Usuarios";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var rol = Context.Session.GetString("Rol")?.ToLower(); // Manejo seguro del rol
+}
+
+<h2 class="mb-4">Gestión de Usuarios</h2>
+
+@if (rol == "administrador")
+{
+    <div class="mb-3">
+        <button class="btn btn-sm btn-success" id="btnNuevoUsuario">
+            <i class="mdi mdi-account-plus"></i> Nuevo Usuario
+        </button>
+    </div>
+}
+
+<table class="table table-hover table-bordered text-center">
+    <thead class="table-dark">
+        <tr>
+            <th>Nombre Usuario</th>
+            <th>Contraseña</th>
+            <th>Rol</th>
+            @if (rol == "administrador")
+            {
+                <th>Acciones</th>
+            }
+        </tr>
+    </thead>
+    <tbody id="usuariosTable">
+        @foreach (var usuario in Model)
+        {
+            <tr data-id="@usuario.Id">
+                <td>@usuario.NombreUsuario</td>
+                <td>••••••••</td>
+                <td>@usuario.Rol</td>
+                @if (rol == "administrador")
+                {
+                    <td>
+                        <button class="btn btn-sm btn-primary btnEditar"><i class="mdi mdi-pencil"></i></button>
+                        <button class="btn btn-sm btn-danger btnEliminar"><i class="mdi mdi-delete"></i></button>
+                    </td>
+                }
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (rol == "administrador")
+{
+    <template id="filaNueva">
+        <tr>
+            <td><input type="text" class="form-control form-control-sm" placeholder="Usuario" /></td>
+            <td><input type="text" class="form-control form-control-sm" placeholder="Contraseña" /></td>
+            <td>
+                <select class="form-control form-control-sm">
+                    <option value="administrador">Administrador</option>
+                    <option value="observador">Observador</option>
+                </select>
+            </td>
+            <td>
+                <button class="btn btn-sm btn-success btnGuardarNuevo"><i class="mdi mdi-content-save"></i></button>
+                <button class="btn btn-sm btn-secondary btnCancelarNuevo"><i class="mdi mdi-close-circle-outline"></i></button>
+            </td>
+        </tr>
+    </template>
+}
+
+@section Scripts {
+@if (rol == "administrador")
+{
+<script>
+    const tabla = document.getElementById("usuariosTable");
+    const btnNuevo = document.getElementById("btnNuevoUsuario");
+    const template = document.getElementById("filaNueva").content;
+
+    btnNuevo?.addEventListener("click", () => {
+        tabla.insertBefore(template.cloneNode(true), tabla.firstChild);
+    });
+
+    tabla.addEventListener("click", async (e) => {
+        const fila = e.target.closest("tr");
+
+        if (e.target.closest(".btnGuardarNuevo")) {
+            const inputs = fila.querySelectorAll("input, select");
+            const data = {
+                NombreUsuario: inputs[0].value,
+                Contraseña: inputs[1].value,
+                Rol: inputs[2].value
+            };
+
+            const resp = await fetch("/Usuario/CreateInline", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(data)
+            });
+
+            if (resp.ok) location.reload();
+            else alert("Error al crear el usuario.");
+        }
+
+        if (e.target.closest(".btnCancelarNuevo")) {
+            fila.remove();
+        }
+
+        if (e.target.closest(".btnEliminar")) {
+            const id = fila.dataset.id;
+            if (confirm("¿Eliminar este usuario?")) {
+                const resp = await fetch(`/Usuario/Delete/${id}`, { method: "POST" });
+                if (resp.ok) fila.remove();
+                else alert("Error al eliminar el usuario.");
+            }
+        }
+
+        if (e.target.closest(".btnEditar")) {
+            const celdas = fila.querySelectorAll("td");
+            const original = [...celdas].map(td => td.textContent);
+            celdas[0].innerHTML = `<input class="form-control form-control-sm" value="${original[0]}" />`;
+            celdas[1].innerHTML = `<input class="form-control form-control-sm" value="" placeholder="Nueva contraseña" />`;
+            celdas[2].innerHTML = `<select class="form-control form-control-sm">
+                                        <option value="administrador">Administrador</option>
+                                        <option value="observador">Observador</option>
+                                   </select>`;
+            celdas[2].querySelector("select").value = original[2];
+            celdas[3].innerHTML = `
+                <button class="btn btn-sm btn-success btnGuardarEdicion"><i class="mdi mdi-content-save"></i></button>
+                <button class="btn btn-sm btn-secondary btnCancelarEdicion"><i class="mdi mdi-close-circle-outline"></i></button>`;
+
+            fila.querySelector(".btnCancelarEdicion").addEventListener("click", () => location.reload());
+            fila.querySelector(".btnGuardarEdicion").addEventListener("click", async () => {
+                const inputs = fila.querySelectorAll("input, select");
+                const data = {
+                    Id: fila.dataset.id,
+                    NombreUsuario: inputs[0].value,
+                    Contraseña: inputs[1].value,
+                    Rol: inputs[2].value
+                };
+
+                const resp = await fetch("/Usuario/EditInline", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                if (resp.ok) location.reload();
+                else alert("Error al guardar los cambios.");
+            });
+        }
+    });
+</script>
+}
+}
