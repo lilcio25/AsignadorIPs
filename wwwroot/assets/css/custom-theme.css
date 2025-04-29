@@ -5,6 +5,7 @@
 body {
     background-color: #f4f3f8;
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    overflow-x: hidden;
 }
 
 .main-panel .content-wrapper {
@@ -24,8 +25,10 @@ body {
 .page-body-wrapper {
     display: flex;
     transition: all 0.3s ease;
+    min-height: 100vh;
 }
 
+/* Sidebar fijo con transición */
 .sidebar {
     transition: all 0.3s ease;
     width: 250px;
@@ -38,25 +41,28 @@ body {
     background-color: #fff;
 }
 
+/* Ocultar sidebar al contraerse */
 .sidebar-hidden .sidebar {
     width: 0;
     overflow: hidden;
 }
 
+/* Panel principal adaptado a sidebar */
 .main-panel {
     transition: all 0.3s ease;
     margin-left: 250px;
-    width: 100%;
+    width: calc(100% - 250px);
 }
 
+/* Al contraer sidebar, expande contenido */
 .sidebar-hidden .main-panel {
-    margin-left: 0;
+    margin-left: 0 !important;
+    width: 100% !important;
 }
 
 #bodyWrapper {
     padding-top: 120px;
 }
-
 
 /* ------------------------ */
 /* Sidebar Navigation Style */
@@ -89,7 +95,6 @@ body {
     color: #000 !important;
 }
 
-
 /* ---------------------- */
 /* Active State Highlight */
 /* ---------------------- */
@@ -104,6 +109,20 @@ body {
     color: #7c4dff !important;
 }
 
+/* Subopción activa dentro de menú desplegado */
+.nav .sub-menu .nav-link.active {
+    font-weight: bold;
+    color: #7c4dff !important;
+    background-color: #f0ebff;
+}
+
+.nav .sub-menu .nav-link i {
+    color: #5c5c5c;
+}
+
+.nav .sub-menu .nav-link.active i {
+    color: #7c4dff !important;
+}
 
 /* --------------------- */
 /* Table and Cards Style */
@@ -124,7 +143,6 @@ body {
     border: 1px solid #ddd;
     border-radius: 6px;
 }
-
 
 /* ------------------ */
 /* Buttons            */
@@ -159,7 +177,6 @@ body {
     color: white;
 }
 
-
 /* ------------------ */
 /* Footer             */
 /* ------------------ */
@@ -171,13 +188,25 @@ body {
     color: #666;
 }
 
-
 /* ------------------ */
 /* Responsive Helpers */
 /* ------------------ */
 
-@media (max-width: 768px) {
+@media (max-width: 992px) {
     .main-panel {
         margin-left: 0 !important;
+        width: 100% !important;
+    }
+
+    .sidebar {
+        width: 0 !important;
+        overflow: hidden;
+    }
+
+    .sidebar-hidden .main-panel {
+        margin-left: 0 !important;
+        width: 100% !important;
     }
 }
+
+

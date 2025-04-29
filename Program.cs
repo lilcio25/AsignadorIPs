@@ -7,23 +7,26 @@ using ASIGNADORIPS.Models;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ✅ Servicios
+// ✅ Servicios necesarios
 builder.Services.AddControllersWithViews();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=equipos.db"));
 
-// ✅ Sesión y HTTP Context
+// ✅ Sesión e HttpContext
 builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
 
+// Alertas Automaticas
+builder.Services.AddHostedService<ASIGNADORIPS.Services.AlertaLicenciasService>();
+
 var app = builder.Build();
 
-// ✅ Semilla de usuarios (solo si no hay ninguno)
+// ✅ Semilla de usuarios (admin y observador)
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.EnsureCreated(); // Crea la DB si no existe
+    db.Database.EnsureCreated();
 
     if (!db.Usuarios.Any())
     {
@@ -42,14 +45,33 @@ if (!app.Environment.IsDevelopment())
 
 app.UseHttpsRedirection();
 app.UseStaticFiles();
-
 app.UseRouting();
-app.UseSession(); // Habilitar sesiones
+app.UseSession(); // Activar sesiones
 app.UseAuthorization();
 
-// ✅ Ruta por defecto: login de Account
+// ✅ Redirección manual si no hay sesión activa
+app.Use(async (context, next) =>
+{
+    var path = context.Request.Path.Value?.ToLower();
+
+    // Permitir acceso sin sesión solo a login, logout y archivos estáticos
+    if (path != null &&
+        !path.StartsWith("/account/login") &&
+        !path.StartsWith("/account/logout") &&
+        !path.StartsWith("/assets") &&
+        string.IsNullOrEmpty(context.Session.GetString("Rol")))
+    {
+        context.Response.Redirect("/Account/Login");
+        return;
+    }
+
+    await next();
+});
+
+// ✅ Ruta por defecto: HomeController -> Index (una vez logueado)
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}");
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
+

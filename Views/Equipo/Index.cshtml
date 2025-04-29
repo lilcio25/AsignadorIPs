@@ -2,101 +2,107 @@
 @{
     ViewData["Title"] = "Listado de Equipos";
     Layout = "_Layout";
-    var rol = Context.Session.GetString("Rol");
+    var rol = Context.Session.GetString("Rol")?.ToLower().Trim();
 }
 
-<h2 class="mb-4">Listado de Equipos Registrados</h2>
+<div class="d-flex justify-content-start mb-3 gap-2">
+    @if (rol == "administrador")
+    {
+        <!-- Dropdown filtros -->
+        <div class="dropdown">
+            <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button" id="dropdownFiltros" data-bs-toggle="dropdown" aria-expanded="false">
+                Filtros
+            </button>
+            <div class="dropdown-menu p-3" style="min-width: 650px;">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label fw-semibold">Piso</label>
+                        <select class="form-select form-select-sm filtro" data-col="1">
+                            <option value="">Todos</option>
+                            @for (int i = 1; i <= 11; i++) { <option value="@i">@i</option> }
+                        </select>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label fw-semibold">Nombre</label>
+                        <input type="text" class="form-control form-control-sm filtro" data-col="2" placeholder="Buscar...">
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <label class="form-label fw-semibold">Usuario</label>
+                        <input type="text" class="form-control form-control-sm filtro" data-col="6" placeholder="Buscar...">
+                    </div>
+                </div>
+            </div>
+        </div>
 
-<!-- Filtros -->
-<div class="row mb-3">
-    <div class="col-md-2">
-        <label class="form-label">Piso</label>
-        <select class="form-select form-select-sm filtro" data-col="0">
-            <option value="">Todos</option>
-            @for (int i = 1; i <= 11; i++)
-            {
-                <option value="@i">@i</option>
-            }
-        </select>
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Nombre Equipo</label>
-        <input type="text" class="form-control form-control-sm filtro" data-col="1" placeholder="Buscar...">
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Usuario</label>
-        <input type="text" class="form-control form-control-sm filtro" data-col="12" placeholder="Buscar...">
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">IP</label>
-        <input type="text" class="form-control form-control-sm filtro" data-col="10" placeholder="Buscar...">
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">SO</label>
-        <input type="text" class="form-control form-control-sm filtro" data-col="7" placeholder="Buscar...">
-    </div>
-    <div class="col-md-2">
-        <label class="form-label">Procesador</label>
-        <input type="text" class="form-control form-control-sm filtro" data-col="4" placeholder="Buscar...">
-    </div>
+        <!-- Botón Eliminar -->
+        <button id="btnEliminarSeleccionados" class="btn btn-danger btn-sm" disabled>
+            <i class="mdi mdi-delete"></i> Eliminar seleccionados
+        </button>
+    }
 </div>
 
-<!-- Tabla -->
 <div class="card">
-    <div class="card-body">
+    <div class="card-body p-2">
         <div class="table-responsive">
-            <table class="table table-sm table-hover table-bordered align-middle text-nowrap">
+            <table class="table table-sm table-hover table-bordered align-middle text-nowrap w-100" id="tablaEquipos">
                 <thead class="table-dark text-center">
                     <tr>
-                        <th class="sortable" data-col="0">Piso <span class="sort-icon">▲▼</span></th>
+                        @if (rol == "administrador") { <th><input type="checkbox" id="checkTodos" /></th> }
+                        <th>Piso</th>
                         <th>Nombre</th>
                         <th>Cod. Inv.</th>
-                        <th>Marca</th>
-                        <th>Proc.</th>
-                        <th>RAM</th>
-                        <th>Disco</th>
-                        <th>S.O</th>
-                        <th>Cod. Mon.</th>
                         <th>Seg. Red</th>
                         <th>IP</th>
-                        <th>Office</th>
                         <th>User</th>
                         <th>Nombre User</th>
                         <th>Anydesk</th>
-                        @if ((rol ?? "").Trim().ToLower() == "administrador")
-                        {
-                            <th>Acciones</th>
-                        }
+                        <th>Detalles</th>
+                        @if (rol == "administrador") { <th>Acciones</th> }
                     </tr>
                 </thead>
                 <tbody>
                     @foreach (var equipo in Model)
                     {
                         <tr data-id="@equipo.Id">
+                            @if (rol == "administrador")
+                            {
+                                <td><input type="checkbox" class="checkFila" value="@equipo.Id" /></td>
+                            }
                             <td>@equipo.Piso</td>
                             <td>@equipo.NombreEquipo</td>
                             <td>@equipo.CodigoInventario</td>
-                            <td>@equipo.Marca</td>
-                            <td>@equipo.Procesador</td>
-                            <td>@equipo.RAM</td>
-                            <td>@equipo.Disco</td>
-                            <td>@equipo.Windows</td>
-                            <td>@equipo.CodigoMonitor</td>
                             <td>@equipo.SegmentoRed</td>
                             <td>@equipo.IP</td>
-                            <td>@equipo.Office</td>
                             <td>@equipo.UsuarioAsignado</td>
                             <td>@equipo.NombreUsuario</td>
                             <td>@equipo.Anydesk</td>
-                            @if ((rol ?? "").Trim().ToLower() == "administrador")
+                            <td class="text-center">
+                                <button type="button" class="btn btn-sm btn-info btn-toggle-detalle">
+                                    <i class="mdi mdi-chevron-down"></i>
+                                </button>
+                            </td>
+                            @if (rol == "administrador")
                             {
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-primary btn-editar" title="Editar"><i class="mdi mdi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-success btn-guardar d-none" title="Guardar"><i class="mdi mdi-content-save"></i></button>
-                                    <button class="btn btn-sm btn-secondary btn-cancelar d-none" title="Cancelar"><i class="mdi mdi-close-circle-outline"></i></button>
-                                    <button class="btn btn-sm btn-danger btn-eliminar" title="Eliminar"><i class="mdi mdi-delete"></i></button>
+                                    <button class="btn btn-sm btn-primary btn-editar"><i class="mdi mdi-pencil"></i></button>
+                                    <button class="btn btn-sm btn-success btn-guardar d-none"><i class="mdi mdi-content-save"></i></button>
+                                    <button class="btn btn-sm btn-secondary btn-cancelar d-none"><i class="mdi mdi-close-circle-outline"></i></button>
                                 </td>
                             }
+                        </tr>
+                        <!-- Fila de detalles ocultos -->
+                        <tr class="fila-detalle bg-light d-none" data-id="@equipo.Id">
+                            <td colspan="@(rol == "administrador" ? "11" : "10")">
+                                <div class="row g-2">
+                                    <div class="col-md-3"><strong>Marca:</strong> <span class="detalle" data-campo="Marca">@equipo.Marca</span></div>
+                                    <div class="col-md-3"><strong>Procesador:</strong> <span class="detalle" data-campo="Procesador">@equipo.Procesador</span></div>
+                                    <div class="col-md-2"><strong>RAM:</strong> <span class="detalle" data-campo="RAM">@equipo.RAM</span></div>
+                                    <div class="col-md-2"><strong>Disco:</strong> <span class="detalle" data-campo="Disco">@equipo.Disco</span></div>
+                                    <div class="col-md-2"><strong>Windows:</strong> <span class="detalle" data-campo="Windows">@equipo.Windows</span></div>
+                                    <div class="col-md-3"><strong>Cod. Monitor:</strong> <span class="detalle" data-campo="CodigoMonitor">@equipo.CodigoMonitor</span></div>
+                                    <div class="col-md-3"><strong>Office:</strong> <span class="detalle" data-campo="Office">@equipo.Office</span></div>
+                                </div>
+                            </td>
                         </tr>
                     }
                 </tbody>
@@ -108,144 +114,138 @@
 @section Scripts {
 <script>
     document.addEventListener("DOMContentLoaded", function () {
-        const rol = "@(Context.Session.GetString("Rol")?.ToLower() ?? "")";
+        const checkTodos = document.getElementById("checkTodos");
+        const checks = document.querySelectorAll(".checkFila");
+        const btnEliminar = document.getElementById("btnEliminarSeleccionados");
 
-        if (rol === "administrador") {
-            const filas = document.querySelectorAll("tbody tr");
-
-            filas.forEach(fila => {
-                const btnEditar = fila.querySelector(".btn-editar");
-                const btnGuardar = fila.querySelector(".btn-guardar");
-                const btnCancelar = fila.querySelector(".btn-cancelar");
-                const btnEliminar = fila.querySelector(".btn-eliminar");
-
-                let valoresOriginales = [];
-
-                btnEditar?.addEventListener("click", () => {
-                    valoresOriginales = [];
-                    const celdas = fila.querySelectorAll("td");
-                    for (let i = 0; i < 15; i++) {
-                        const texto = celdas[i].textContent.trim();
-                        valoresOriginales.push(texto);
-                        celdas[i].innerHTML = `<input type="text" class="form-control form-control-sm w-100" value="${texto}" style="min-width:150px;" />`;
-                    }
-                    btnEditar.classList.add("d-none");
-                    btnGuardar.classList.remove("d-none");
-                    btnCancelar.classList.remove("d-none");
-                });
-
-                btnCancelar?.addEventListener("click", () => {
-                    const celdas = fila.querySelectorAll("td");
-                    for (let i = 0; i < 15; i++) {
-                        celdas[i].textContent = valoresOriginales[i];
-                    }
-                    btnEditar.classList.remove("d-none");
-                    btnGuardar.classList.add("d-none");
-                    btnCancelar.classList.add("d-none");
-                });
-
-                btnGuardar?.addEventListener("click", () => {
-                    const inputs = fila.querySelectorAll("input");
-                    const data = {
-                        id: fila.dataset.id,
-                        piso: inputs[0].value,
-                        nombreEquipo: inputs[1].value,
-                        codigoInventario: inputs[2].value,
-                        marca: inputs[3].value,
-                        procesador: inputs[4].value,
-                        ram: inputs[5].value,
-                        disco: inputs[6].value,
-                        windows: inputs[7].value,
-                        codigoMonitor: inputs[8].value,
-                        segmentoRed: inputs[9].value,
-                        ip: inputs[10].value,
-                        office: inputs[11].value,
-                        usuarioAsignado: inputs[12].value,
-                        nombreUsuario: inputs[13].value,
-                        anydesk: inputs[14].value
-                    };
-
-                    fetch("/Equipo/UpdateInline", {
-                        method: "POST",
-                        headers: { "Content-Type": "application/json" },
-                        body: JSON.stringify(data)
-                    }).then(resp => {
-                        if (resp.ok) {
-                            inputs.forEach((input, index) => {
-                                input.parentElement.textContent = input.value;
-                            });
-                            btnEditar.classList.remove("d-none");
-                            btnGuardar.classList.add("d-none");
-                            btnCancelar.classList.add("d-none");
-                        } else {
-                            alert("Error al guardar los cambios");
-                        }
-                    });
-                });
-
-                btnEliminar?.addEventListener("click", () => {
-                    if (confirm("¿Estás seguro de que deseas eliminar este equipo?")) {
-                        fetch(`/Equipo/DeleteInline/${fila.dataset.id}`, {
-                            method: "POST"
-                        }).then(resp => {
-                            if (resp.ok) {
-                                fila.remove();
-                            } else {
-                                alert("Error al eliminar el equipo.");
-                            }
-                        });
-                    }
-                });
+        if (checkTodos) {
+            checkTodos.addEventListener("change", function () {
+                checks.forEach(c => c.checked = checkTodos.checked);
+                btnEliminar.disabled = !Array.from(checks).some(c => c.checked);
             });
         }
 
-        // Filtros
-        document.querySelectorAll(".filtro").forEach(input => {
-            input.addEventListener("input", function () {
-                const filtros = document.querySelectorAll(".filtro");
-                const filas = document.querySelectorAll("tbody tr");
+        if (btnEliminar) {
+            checks.forEach(c => {
+                c.addEventListener("change", () => {
+                    btnEliminar.disabled = !Array.from(checks).some(c => c.checked);
+                });
+            });
 
-                filas.forEach(fila => {
-                    let mostrar = true;
-                    filtros.forEach(filtro => {
-                        const col = parseInt(filtro.dataset.col);
-                        const val = filtro.value.toLowerCase();
-                        const celda = fila.children[col].textContent.toLowerCase();
-                        if (val && col === 0) {
-                            if (celda !== val) {
-                                mostrar = false;
-                            }
-                        } else if (val && !celda.includes(val)) {
-                            mostrar = false;
+            btnEliminar.addEventListener("click", () => {
+                const seleccionados = Array.from(checks).filter(c => c.checked).map(c => parseInt(c.value));
+                if (seleccionados.length > 0 && confirm("¿Deseas eliminar los equipos seleccionados?")) {
+                    fetch('/Equipo/EliminarMultiples', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(seleccionados)
+                    }).then(resp => {
+                        if (resp.ok) {
+                            seleccionados.forEach(id => {
+                                const fila = document.querySelector(`tr[data-id='${id}']`);
+                                if (fila) fila.remove();
+                            });
+                        } else {
+                            alert("Error al eliminar los equipos seleccionados.");
                         }
                     });
-                    fila.style.display = mostrar ? "" : "none";
-                });
+                }
+            });
+        }
+
+        document.querySelectorAll(".btn-toggle-detalle").forEach(boton => {
+            boton.addEventListener("click", function () {
+                const filaPrincipal = this.closest("tr");
+                const id = filaPrincipal.dataset.id;
+                const filaDetalle = document.querySelector(`.fila-detalle[data-id='${id}']`);
+                filaDetalle.classList.toggle("d-none");
+                this.querySelector("i").classList.toggle("mdi-chevron-down");
+                this.querySelector("i").classList.toggle("mdi-chevron-up");
             });
         });
 
-        // Ordenar columna Piso
-        document.querySelectorAll("th.sortable").forEach(th => {
-            let asc = true;
-            th.addEventListener("click", () => {
-                const table = th.closest("table");
-                const tbody = table.querySelector("tbody");
-                const index = parseInt(th.dataset.col);
+        document.querySelectorAll("tbody tr").forEach(fila => {
+            const btnEditar = fila.querySelector(".btn-editar");
+            const btnGuardar = fila.querySelector(".btn-guardar");
+            const btnCancelar = fila.querySelector(".btn-cancelar");
 
-                const rows = Array.from(tbody.querySelectorAll("tr"));
+            if (!btnEditar) return;
 
-                rows.sort((a, b) => {
-                    const valA = a.children[index].textContent.trim();
-                    const valB = b.children[index].textContent.trim();
-                    return asc ? valA.localeCompare(valB, undefined, { numeric: true }) : valB.localeCompare(valA, undefined, { numeric: true });
+            let valoresOriginales = [];
+
+            btnEditar?.addEventListener("click", () => {
+                valoresOriginales = [];
+
+                const celdas = fila.querySelectorAll("td:not(:first-child):not(:last-child):not(:nth-last-child(2))");
+                celdas.forEach(celda => {
+                    const texto = celda.innerText.trim();
+                    valoresOriginales.push(texto);
+                    celda.innerHTML = `<input type="text" class="form-control form-control-sm" value="${texto}" />`;
                 });
 
-                rows.forEach(row => tbody.appendChild(row));
-                asc = !asc;
+                const filaDetalle = document.querySelector(`.fila-detalle[data-id='${fila.dataset.id}']`);
+                if (filaDetalle) {
+                    filaDetalle.querySelectorAll(".detalle").forEach(span => {
+                        const valor = span.innerText.trim();
+                        valoresOriginales.push(valor);
+                        span.innerHTML = `<input type="text" class="form-control form-control-sm" value="${valor}" />`;
+                    });
+                }
 
-                // Cambiar icono
-                const icon = th.querySelector(".sort-icon");
-                if (icon) icon.textContent = asc ? "▲▼" : "▼▲";
+                btnEditar.classList.add("d-none");
+                btnGuardar.classList.remove("d-none");
+                btnCancelar.classList.remove("d-none");
+            });
+
+            btnCancelar?.addEventListener("click", () => {
+                const celdas = fila.querySelectorAll("td:not(:first-child):not(:last-child):not(:nth-last-child(2))");
+                celdas.forEach((celda, index) => {
+                    celda.innerHTML = valoresOriginales[index];
+                });
+
+                const filaDetalle = document.querySelector(`.fila-detalle[data-id='${fila.dataset.id}']`);
+                if (filaDetalle) {
+                    filaDetalle.querySelectorAll(".detalle").forEach((span, idx) => {
+                        span.innerHTML = valoresOriginales[celdas.length + idx];
+                    });
+                }
+
+                btnEditar.classList.remove("d-none");
+                btnGuardar.classList.add("d-none");
+                btnCancelar.classList.add("d-none");
+            });
+
+            btnGuardar?.addEventListener("click", () => {
+                const inputs = fila.querySelectorAll("input");
+                const inputsDetalle = document.querySelector(`.fila-detalle[data-id='${fila.dataset.id}']`)?.querySelectorAll("input") || [];
+
+                const data = {
+                    id: fila.dataset.id,
+                    piso: inputs[0].value || "---",
+                    nombreEquipo: inputs[1].value || "---",
+                    codigoInventario: inputs[2].value || "---",
+                    segmentoRed: inputs[3].value || "---",
+                    ip: inputs[4].value || "---",
+                    usuarioAsignado: inputs[5].value || "---",
+                    nombreUsuario: inputs[6].value || "---",
+                    anydesk: inputs[7].value || "---",
+                    marca: inputsDetalle[0]?.value || "---",
+                    procesador: inputsDetalle[1]?.value || "---",
+                    ram: inputsDetalle[2]?.value || "---",
+                    disco: inputsDetalle[3]?.value || "---",
+                    windows: inputsDetalle[4]?.value || "---",
+                    codigoMonitor: inputsDetalle[5]?.value || "---",
+                    office: inputsDetalle[6]?.value || "---"
+                };
+
+                fetch("/Equipo/UpdateInline", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                }).then(resp => {
+                    if (resp.ok) location.reload();
+                    else alert("Error al guardar cambios.");
+                });
             });
         });
     });

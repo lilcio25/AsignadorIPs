@@ -19,12 +19,20 @@ build_property._RazorSourceGeneratorDebug =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQWNjb3VudC9Mb2dpbi5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/claudio/AsignadorIPs/Views/Configuracion/Correo.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvQ29uZmlndXJhY2lvbi9Db3JyZW8uY3NodG1s
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/claudio/AsignadorIPs/Views/Equipo/Create.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRXF1aXBvL0NyZWF0ZS5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/claudio/AsignadorIPs/Views/Equipo/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvRXF1aXBvL0luZGV4LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/claudio/AsignadorIPs/Views/Home/Index.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvSG9tZS9JbmRleC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/claudio/AsignadorIPs/Views/Shared/Error.cshtml]
@@ -35,8 +43,20 @@ build_metadata.AdditionalFiles.CssScope =
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU2hhcmVkL19WYWxpZGF0aW9uU2NyaXB0c1BhcnRpYWwuY3NodG1s
 build_metadata.AdditionalFiles.CssScope = 
 
+[/Users/claudio/AsignadorIPs/Views/Software/UsuariosSoft.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU29mdHdhcmUvVXN1YXJpb3NTb2Z0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/claudio/AsignadorIPs/Views/Software/VistaSoft.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvU29mdHdhcmUvVmlzdGFTb2Z0LmNzaHRtbA==
+build_metadata.AdditionalFiles.CssScope = 
+
 [/Users/claudio/AsignadorIPs/Views/Usuario/Index.cshtml]
 build_metadata.AdditionalFiles.TargetPath = Vmlld3MvVXN1YXJpby9JbmRleC5jc2h0bWw=
+build_metadata.AdditionalFiles.CssScope = 
+
+[/Users/claudio/AsignadorIPs/Views/Usuario/Personal.cshtml]
+build_metadata.AdditionalFiles.TargetPath = Vmlld3MvVXN1YXJpby9QZXJzb25hbC5jc2h0bWw=
 build_metadata.AdditionalFiles.CssScope = 
 
 [/Users/claudio/AsignadorIPs/Views/_ViewImports.cshtml]

@@ -1,0 +1,163 @@
+@model List<ASIGNADORIPS.Models.Personal>
+
+@{
+    ViewData["Title"] = "Gestión de Personal";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-4">Ingresar Nuevo Funcionario</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="Crear" method="post" class="row g-3">
+            <div class="col-md-4">
+                <label class="form-label">Código de Funcionario</label>
+                <input name="CodigoFuncionario" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Nombre Completo</label>
+                <input name="NombreCompleto" class="form-control" required />
+            </div>
+            <div class="col-md-4">
+                <label class="form-label">Correo Funcionario</label>
+                <input name="CorreoFuncionario" class="form-control" type="email" required />
+            </div>
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-success">Agregar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- CARGA MASIVA -->
+<form asp-action="CargarExcel" method="post" enctype="multipart/form-data" class="d-flex gap-2 mb-4">
+    <input type="file" name="archivo" class="form-control" required />
+    <button type="submit" class="btn btn-info">Subir y Procesar</button>
+</form>
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h4 class="mb-0">Listado de Personal</h4>
+    <button class="btn btn-danger btn-sm" id="btnEliminarSeleccionados">
+        <i class="mdi mdi-delete"></i> Eliminar Seleccionados
+    </button>
+</div>
+
+<table class="table table-bordered table-striped">
+    <thead class="table-dark">
+        <tr>
+            <th><input type="checkbox" id="checkTodos" /></th>
+            <th>Código</th>
+            <th>Nombre</th>
+            <th>Correo</th>
+            <th style="width: 140px;">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var p in Model)
+        {
+            <tr data-id="@p.Id">
+                <td><input type="checkbox" class="check-eliminar" /></td>
+                <td><input class="form-control-plaintext" readonly value="@p.CodigoFuncionario" /></td>
+                <td><input class="form-control-plaintext" readonly value="@p.NombreCompleto" /></td>
+                <td><input class="form-control-plaintext" readonly value="@p.CorreoFuncionario" /></td>
+                <td>
+                    <button class="btn btn-sm btn-warning btn-editar" type="button">Editar</button>
+                    <button class="btn btn-sm btn-success btn-guardar d-none" type="button">Guardar</button>
+                    <button class="btn btn-sm btn-secondary btn-cancelar d-none" type="button">Cancelar</button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal para confirmar eliminación múltiple -->
+<div class="modal fade" id="modalEliminarSeleccionados" tabindex="-1" aria-labelledby="modalEliminarSeleccionadosLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-danger">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar los registros seleccionados?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" id="btnConfirmarEliminarSeleccionados" class="btn btn-danger">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        // Edición
+        document.querySelectorAll(".btn-editar").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const row = this.closest("tr");
+                row.querySelectorAll("input:not(.check-eliminar)").forEach(input => {
+                    input.removeAttribute("readonly");
+                    input.classList.remove("form-control-plaintext");
+                    input.classList.add("form-control");
+                });
+                row.querySelector(".btn-editar").classList.add("d-none");
+                row.querySelector(".btn-guardar").classList.remove("d-none");
+                row.querySelector(".btn-cancelar").classList.remove("d-none");
+            });
+        });
+
+        document.querySelectorAll(".btn-cancelar").forEach(btn => {
+            btn.addEventListener("click", () => location.reload());
+        });
+
+        document.querySelectorAll(".btn-guardar").forEach(btn => {
+            btn.addEventListener("click", function () {
+                const row = this.closest("tr");
+                const id = row.dataset.id;
+                const inputs = row.querySelectorAll("input");
+                const data = {
+                    Id: id,
+                    CodigoFuncionario: inputs[1].value,
+                    NombreCompleto: inputs[2].value,
+                    CorreoFuncionario: inputs[3].value
+                };
+
+                fetch('/Personal/EditarInline', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                }).then(res => res.ok ? location.reload() : alert("Error al guardar"));
+            });
+        });
+
+        // Checkbox general
+        document.getElementById("checkTodos").addEventListener("change", function () {
+            const checkboxes = document.querySelectorAll(".check-eliminar");
+            checkboxes.forEach(cb => cb.checked = this.checked);
+        });
+
+        // Eliminar seleccionados
+        document.getElementById("btnEliminarSeleccionados").addEventListener("click", () => {
+            const seleccionados = Array.from(document.querySelectorAll(".check-eliminar:checked"))
+                .map(cb => cb.closest("tr").dataset.id);
+
+            if (seleccionados.length === 0) {
+                alert("Seleccione al menos un registro para eliminar.");
+                return;
+            }
+
+            const modal = new bootstrap.Modal(document.getElementById("modalEliminarSeleccionados"));
+            modal.show();
+
+            document.getElementById("btnConfirmarEliminarSeleccionados").onclick = () => {
+                fetch('/Personal/EliminarMultiples', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(seleccionados)
+                }).then(res => res.ok ? location.reload() : alert("Error al eliminar"));
+            };
+        });
+    });
+</script>
+}

@@ -1,0 +1,101 @@
+#########################################
+# Compilación general
+#########################################
+bin/
+obj/
+[Bb]uild/
+[Bb]uild[Ll]og.*
+
+# Archivos de publicación
+.publish/
+
+# Archivos temporales
+*.tmp
+*.temp
+*.bak
+*.log
+
+#########################################
+# Archivos de usuario
+#########################################
+*.user
+*.userosscache
+*.suo
+*.sln.docstates
+
+#########################################
+# Configuraciones de Visual Studio
+#########################################
+.vscode/
+.idea/
+*.code-workspace
+
+#########################################
+# Sistema Operativo
+#########################################
+# MacOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+#########################################
+# Otros
+#########################################
+*.db
+*.sqlite
+*.sqlite3
+
+# Paquetes
+packages/
+*.nupkg
+*.snupkg
+
+# Cache de herramientas
+.vs/
+_ReSharper*/
+*.resharper
+*.dotCover
+*.sln.ide
+
+# Logs de aplicación
+logs/
+*.log
+
+# Archivos de testing
+TestResults/
+nunit-*.xml
+
+# Configuración global
+global.json
+
+# Archivos de lock
+project.lock.json
+project.fragment.lock.json
+
+# Coverage
+coverage/
+*.coverage
+*.coveragexml
+
+# Entornos locales
+.env
+.env.*.local
+*.local.json
+
+# Docker
+docker-compose.override.yml
+*.pid
+
+# Secretos
+secrets.json
+*.secrets
+
+# Certificados
+*.pfx
+*.p12

@@ -3,31 +3,44 @@
 @{
     ViewData["Title"] = "Registrar Equipo";
     Layout = "_Layout";
-
-    var rol = Context.Session.GetString("Rol");
-    if (rol?.ToLower() != "administrador")
-    {
-        <script>
-            window.location.href = "/Equipo/Index";
-        </script>
-    }
 }
 
 <h2 class="mb-4">Registrar Nuevo Equipo</h2>
 
-<form asp-action="Create" method="post" class="row g-3">
+<!-- FORMULARIO PARA CARGA DESDE EXCEL -->
+<div class="mb-4 p-3 border rounded bg-light">
+    <form asp-action="CargarDesdeExcel" asp-controller="Equipo" method="post" enctype="multipart/form-data">
+        <div class="row align-items-end">
+            <div class="col-md-9">
+                <input type="file" name="archivoExcel" id="archivoExcel" class="form-control" accept=".xlsx" required />
+            </div>
+            <div class="col-md-3 text-end">
+                <button type="submit" class="btn btn-success w-100">Importar desde Excel</button>
+            </div>
+        </div>
+        <div class="form-text mt-2">
+            El archivo debe tener columnas: Piso, NombreEquipo, CodigoInventario, Marca, Procesador, RAM, Disco, Windows, CodigoMonitor, SegmentoRed, IP, Office, UsuarioAsignado, NombreUsuario, Anydesk
+        </div>
+    </form>
+</div>
+
+<!-- FORMULARIO PARA INGRESO MANUAL -->
+<form id="formEquipo" asp-action="Create" method="post" class="row gy-4">
+    <!-- Fila 1 -->
     <div class="col-md-2">
-        <label asp-for="Piso" class="form-label">Piso</label>
-        <input asp-for="Piso" class="form-control" id="Piso" />
+        <label asp-for="Piso" class="form-label">Piso *</label>
+        <input asp-for="Piso" class="form-control" id="Piso" required />
     </div>
-    <div class="col-md-4">
-        <label asp-for="NombreEquipo" class="form-label">Nombre del equipo</label>
-        <input asp-for="NombreEquipo" class="form-control" />
+    <div class="col-md-5">
+        <label asp-for="NombreEquipo" class="form-label">Nombre del equipo *</label>
+        <input asp-for="NombreEquipo" class="form-control" required />
     </div>
-    <div class="col-md-4">
-        <label asp-for="CodigoInventario" class="form-label">Código de Inventario</label>
-        <input asp-for="CodigoInventario" class="form-control" />
+    <div class="col-md-5">
+        <label asp-for="CodigoInventario" class="form-label">Código de Inventario *</label>
+        <input asp-for="CodigoInventario" class="form-control" required />
     </div>
+
+    <!-- Fila 2 -->
     <div class="col-md-4">
         <label asp-for="Marca" class="form-label">Marca</label>
         <input asp-for="Marca" class="form-control" />
@@ -36,31 +49,39 @@
         <label asp-for="Procesador" class="form-label">Procesador</label>
         <input asp-for="Procesador" class="form-control" />
     </div>
-    <div class="col-md-2">
+    <div class="col-md-4">
         <label asp-for="RAM" class="form-label">RAM</label>
         <input asp-for="RAM" class="form-control" />
     </div>
-    <div class="col-md-2">
+
+    <!-- Fila 3 -->
+    <div class="col-md-6">
         <label asp-for="Disco" class="form-label">Disco</label>
         <input asp-for="Disco" class="form-control" />
     </div>
-    <div class="col-md-3">
+    <div class="col-md-6">
         <label asp-for="Windows" class="form-label">Windows</label>
         <input asp-for="Windows" class="form-control" />
     </div>
-    <div class="col-md-3">
+
+    <!-- Fila 4 -->
+    <div class="col-md-6">
         <label asp-for="CodigoMonitor" class="form-label">Código Inventario Monitor</label>
         <input asp-for="CodigoMonitor" class="form-control" />
     </div>
     <div class="col-md-3">
-        <label asp-for="SegmentoRed" class="form-label">Segmento de Red</label>
-        <input asp-for="SegmentoRed" class="form-control" id="SegmentoRed" readonly />
+        <label asp-for="SegmentoRed" class="form-label">Segmento de Red *</label>
+        <input asp-for="SegmentoRed" class="form-control" id="SegmentoRed" readonly required />
     </div>
     <div class="col-md-3">
-        <label asp-for="IP" class="form-label">IP</label>
-        <input asp-for="IP" class="form-control" id="IP" />
+        <label asp-for="IP" class="form-label">IP *</label>
+        <select asp-for="IP" class="form-select" id="IP" required>
+            <option value="">Seleccione una IP</option>
+        </select>
     </div>
-    <div class="col-md-3">
+
+    <!-- Fila 5 -->
+    <div class="col-md-4">
         <label asp-for="Office" class="form-label">Office</label>
         <input asp-for="Office" class="form-control" />
     </div>
@@ -72,45 +93,106 @@
         <label asp-for="NombreUsuario" class="form-label">Nombre de Usuario</label>
         <input asp-for="NombreUsuario" class="form-control" />
     </div>
+
+    <!-- Fila 6 -->
     <div class="col-md-4">
         <label asp-for="Anydesk" class="form-label">Código de Anydesk</label>
         <input asp-for="Anydesk" class="form-control" />
     </div>
 
-    <div class="col-12">
-        <button type="submit" class="btn btn-primary">Guardar</button>
+    <!-- Botón -->
+    <div class="col-12 text-end mt-3">
+        <button type="submit" class="btn btn-primary">Guardar Manualmente</button>
     </div>
 </form>
 
+<!-- Modal Bootstrap -->
+<div class="modal fade" id="modalAlerta" tabindex="-1" aria-labelledby="modalAlertaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning text-dark">
+                <h5 class="modal-title" id="modalAlertaLabel">Advertencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body fw-semibold" id="modalAlertaMensaje"></div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    <script>
-        document.addEventListener("DOMContentLoaded", function () {
-            const pisoInput = document.querySelector("#Piso");
-            const segmentoInput = document.querySelector("#SegmentoRed");
-            const ipInput = document.querySelector("#IP");
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const pisoInput = document.getElementById("Piso");
+        const segmentoInput = document.getElementById("SegmentoRed");
+        const ipSelect = document.getElementById("IP");
+        const form = document.getElementById("formEquipo");
 
-            pisoInput.addEventListener("input", () => {
-                const piso = parseInt(pisoInput.value);
-                let segmento = "";
+        pisoInput.addEventListener("input", () => {
+            const piso = parseInt(pisoInput.value);
+            let segmento = "";
 
-                if ([1, 5, 6, 7].includes(piso)) segmento = "200";
-                else if ([2, 8, 9].includes(piso)) segmento = "190";
-                else if ([3, 4, 10, 11].includes(piso)) segmento = "180";
+            if ([1, 5, 6, 7].includes(piso)) segmento = "200";
+            else if ([2, 8, 9].includes(piso)) segmento = "190";
+            else if ([3, 4, 10, 11].includes(piso)) segmento = "180";
 
-                segmentoInput.value = segmento;
+            segmentoInput.value = segmento;
+            ipSelect.innerHTML = "<option value=''>Cargando IPs disponibles...</option>";
 
-                if (segmento !== "") {
-                    fetch(`/Equipo/ObtenerIpDisponible?piso=${piso}`)
-                        .then(res => res.ok ? res.json() : Promise.reject("Error al obtener IP"))
-                        .then(data => {
-                            ipInput.value = data.ip;
-                        })
-                        .catch(err => {
-                            console.error(err);
-                            ipInput.value = "";
-                        });
+            if (segmento !== "") {
+                fetch(`/Equipo/ObtenerIpsDisponibles?piso=${piso}`)
+                    .then(res => res.ok ? res.json() : Promise.reject("Error"))
+                    .then(data => {
+                        ipSelect.innerHTML = "";
+                        if (data.length === 0) {
+                            ipSelect.innerHTML = "<option value=''>No hay IPs disponibles</option>";
+                        } else {
+                            ipSelect.innerHTML = "<option value=''>Seleccione una IP</option>";
+                            data.forEach(ip => {
+                                const option = document.createElement("option");
+                                option.value = ip;
+                                option.textContent = ip;
+                                ipSelect.appendChild(option);
+                            });
+                        }
+                    })
+                    .catch(() => {
+                        ipSelect.innerHTML = "<option value=''>Error al obtener IPs</option>";
+                    });
+            }
+        });
+
+        form.addEventListener("submit", function (e) {
+            e.preventDefault();
+
+            const ip = document.getElementById("IP").value;
+            const segmento = document.getElementById("SegmentoRed").value;
+
+            fetch("/Equipo/ValidarDuplicados", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ IP: ip, SegmentoRed: segmento })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.duplicado) {
+                    mostrarPopup("Esta IP ya se encuentra registrada.");
+                } else {
+                    form.submit();
                 }
+            })
+            .catch(() => {
+                mostrarPopup("Error al validar duplicados.");
             });
         });
-    </script>
+    });
+
+    function mostrarPopup(mensaje) {
+        document.getElementById("modalAlertaMensaje").textContent = mensaje;
+        const modal = new bootstrap.Modal(document.getElementById("modalAlerta"));
+        modal.show();
+    }
+</script>
 }

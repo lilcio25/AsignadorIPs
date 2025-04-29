@@ -1,0 +1,257 @@
+@{
+    ViewData["Title"] = "Bienvenido";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-4 text-center">Panel de Indicadores</h2>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card border-success shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="card-title">Licencias Totales</h6>
+                <h4 id="kpiTotal" class="text-success">0</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-primary shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="card-title">Licencias Disponibles</h6>
+                <h4 id="kpiDisponibles" class="text-primary">0</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-danger shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="card-title">Por Vencer (&lt; 30 días)</h6>
+                <h4 id="kpiPorVencer" class="text-danger">0</h4>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card border-warning shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="card-title">Funcionarios con Asignaciones</h6>
+                <h4 id="kpiConAsignaciones" class="text-warning">0</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-dark shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="card-title">Costo Total de Licencias</h6>
+                <h4 id="kpiCostoTotal" class="text-dark">$0</h4>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-secondary shadow-sm">
+            <div class="card-body text-center">
+                <h6 class="card-title d-flex justify-content-between align-items-center">
+                    <span>Costo Promedio Licencia</span>
+                    <select id="filtroCostoPromedio" class="form-select form-select-sm w-auto">
+                        <option value="_all">Todas</option>
+                    </select>
+                </h6>
+                <h4 id="kpiCostoPromedio" class="text-secondary">$0</h4>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-5">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                <span>% Uso de Licencias por Software</span>
+                <select id="filtroLicencia" class="form-select form-select-sm w-auto">
+                    <option value="_all">Todas</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoUso"></canvas>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-light fw-bold d-flex justify-content-between align-items-center">
+                <span>Asignaciones por Persona</span>
+                <select id="filtroPersona" class="form-select form-select-sm w-auto">
+                    <option value="_all">Todas</option>
+                </select>
+            </div>
+            <div class="card-body">
+                <canvas id="graficoAsignaciones"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    let usoDataOriginal = [];
+    let asignacionesOriginal = [];
+    let graficoUso = null;
+    let graficoAsignaciones = null;
+    let softwaresCosto = [];
+
+    document.addEventListener("DOMContentLoaded", async () => {
+        try {
+            const kpiRes = await fetch('/api/dashboard/kpis');
+            const kpiData = await kpiRes.json();
+
+            document.getElementById("kpiTotal").innerText = kpiData.totalLicencias ?? 0;
+            document.getElementById("kpiDisponibles").innerText = kpiData.disponibles ?? 0;
+            document.getElementById("kpiPorVencer").innerText = kpiData.porVencer ?? 0;
+            document.getElementById("kpiConAsignaciones").innerText = kpiData.funcionariosConAsignaciones ?? 0;
+            document.getElementById("kpiCostoTotal").innerText = kpiData.costoTotal.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+
+            const costoRes = await fetch('/api/dashboard/uso-licencias');
+            softwaresCosto = await costoRes.json();
+
+            const selectCosto = document.getElementById('filtroCostoPromedio');
+            softwaresCosto.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.nombre;
+                opt.innerText = d.nombre;
+                selectCosto.appendChild(opt);
+            });
+
+            selectCosto.addEventListener("change", () => actualizarCostoPromedio());
+            actualizarCostoPromedio();
+
+            const usoRes = await fetch('/api/dashboard/uso-licencias');
+            usoDataOriginal = await usoRes.json();
+
+            const select = document.getElementById('filtroLicencia');
+            usoDataOriginal.forEach(d => {
+                const opt = document.createElement("option");
+                opt.value = d.nombre;
+                opt.innerText = d.nombre;
+                select.appendChild(opt);
+            });
+
+            select.addEventListener("change", () => renderGraficoUso(select.value));
+            renderGraficoUso("_all");
+
+            const asigRes = await fetch('/api/dashboard/asignaciones-personal');
+            asignacionesOriginal = await asigRes.json();
+
+            const selectPersona = document.getElementById('filtroPersona');
+            asignacionesOriginal.forEach(p => {
+                const opt = document.createElement("option");
+                opt.value = p.nombre;
+                opt.innerText = p.nombre;
+                selectPersona.appendChild(opt);
+            });
+
+            selectPersona.addEventListener("change", () => renderGraficoAsignaciones(selectPersona.value));
+            renderGraficoAsignaciones("_all");
+
+        } catch (error) {
+            console.error("Error al cargar los datos del dashboard:", error);
+        }
+    });
+
+    function actualizarCostoPromedio() {
+        const filtro = document.getElementById('filtroCostoPromedio').value;
+        let costoTotal = 0;
+        let licenciasTotal = 0;
+
+        if (filtro === '_all') {
+            softwaresCosto.forEach(s => {
+                costoTotal += s.costoTotal;
+                licenciasTotal += s.total;
+            });
+        } else {
+            const seleccionado = softwaresCosto.find(s => s.nombre === filtro);
+            if (seleccionado) {
+                costoTotal = seleccionado.costoTotal;
+                licenciasTotal = seleccionado.total;
+            }
+        }
+
+        if (licenciasTotal > 0) {
+            const promedio = costoTotal / licenciasTotal;
+            document.getElementById("kpiCostoPromedio").innerText = promedio.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+        } else {
+            document.getElementById("kpiCostoPromedio").innerText = "$0";
+        }
+    }
+
+    function renderGraficoUso(filtro) {
+        const ctx = document.getElementById('graficoUso').getContext('2d');
+        if (graficoUso) graficoUso.destroy();
+
+        let labels = [];
+        let data = [];
+
+        if (filtro === '_all') {
+            labels = usoDataOriginal.map(d => d.nombre);
+            data = usoDataOriginal.map(d => d.asignadas);
+        } else {
+            const selected = usoDataOriginal.find(d => d.nombre === filtro);
+            if (selected) {
+                labels = ['Asignadas', 'Disponibles'];
+                data = [selected.asignadas, selected.disponibles];
+            }
+        }
+
+        graficoUso = new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: labels,
+                datasets: [{
+                    data: data,
+                    backgroundColor: ['#198754', '#0d6efd', '#ffc107', '#dc3545', '#6f42c1', '#20c997']
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { position: 'bottom' } }
+            }
+        });
+    }
+
+    function renderGraficoAsignaciones(filtro) {
+        const ctx = document.getElementById('graficoAsignaciones').getContext('2d');
+        if (graficoAsignaciones) graficoAsignaciones.destroy();
+
+        let labels = [];
+        let data = [];
+
+        if (filtro === '_all') {
+            labels = asignacionesOriginal.map(p => p.nombre);
+            data = asignacionesOriginal.map(p => p.cantidad);
+        } else {
+            const selected = asignacionesOriginal.find(p => p.nombre === filtro);
+            if (selected) {
+                labels = [selected.nombre];
+                data = [selected.cantidad];
+            }
+        }
+
+        graficoAsignaciones = new Chart(ctx, {
+            type: 'bar',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: 'Licencias asignadas',
+                    data: data,
+                    backgroundColor: '#0dcaf0'
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: { legend: { display: false } },
+                scales: { x: { ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 } } }
+            }
+        });
+    }
+</script>
+}

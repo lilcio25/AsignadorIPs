@@ -1,0 +1,187 @@
+@model ASIGNADORIPS.Models.ViewModels.AsociacionLicenciasViewModel
+
+@{
+    ViewData["Title"] = "Asociar Licencias";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-4">Asociar Licencias de Software</h2>
+
+<div class="card mb-4">
+    <div class="card-body">
+        <form asp-action="AsociarLicencias" method="post" class="row g-3">
+            <div class="col-md-6">
+                <label for="personalId" class="form-label">Personal</label>
+                <select class="form-select" name="personalId" id="personalId" required>
+                    <option value="">Seleccione personal</option>
+                    @foreach (var p in Model.Personal)
+                    {
+                        <option value="@p.Id">@p.NombreCompleto</option>
+                    }
+                </select>
+            </div>
+
+            <div class="col-md-6">
+                <label class="form-label">Licencias de Software</label>
+                <div class="border rounded p-2 overflow-auto" style="max-height: 220px;">
+                    @foreach (var s in Model.Softwares)
+                    {
+                        var agotado = s.LicenciasDisponibles <= 0;
+                        <div class="form-check mb-2 ps-1">
+                            <input class="form-check-input" type="checkbox" name="softwareIds" value="@s.Id" id="soft_@s.Id" style="margin-top: 0.3em;" @(agotado ? "disabled" : "") />
+                            <label class="form-check-label @(agotado ? "text-muted" : "")" for="soft_@s.Id">
+                                @s.Nombre
+                                @if (agotado)
+                                {
+                                    <span class="badge bg-secondary ms-2">Sin disponibilidad</span>
+                                }
+                            </label>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <div class="col-12 text-end">
+                <button type="submit" class="btn btn-primary">Asociar Licencias</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<h4 class="mt-5">Asignaciones actuales</h4>
+<div class="row mb-3">
+    <div class="col-md-6">
+        <label class="form-label">Filtrar por Licencia</label>
+        <select class="form-select" id="filtroLicencia">
+            <option value="">Todas las licencias</option>
+            @foreach (var s in Model.Softwares.DistinctBy(s => s.Nombre))
+            {
+                <option value="@s.Nombre">@s.Nombre</option>
+            }
+        </select>
+    </div>
+    <div class="col-md-6">
+        <label class="form-label">Buscar Personal</label>
+        <input type="text" id="busquedaPersonal" class="form-control" placeholder="Ingrese nombre del personal...">
+    </div>
+</div>
+
+<table class="table table-bordered" id="tablaAsignaciones">
+    <thead class="table-dark">
+        <tr>
+            <th>Nombre del Personal</th>
+            <th>Software</th>
+            <th class="text-center">Acciones</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var a in Model.Asignaciones)
+        {
+            var nombrePersonal = Model.Personal.FirstOrDefault(p => p.Id == a.PersonalId)?.NombreCompleto ?? "Desconocido";
+            var nombreSoftware = Model.Softwares.FirstOrDefault(s => s.Id == a.SoftwareId)?.Nombre ?? "Desconocido";
+
+            <tr>
+                <td>@nombrePersonal</td>
+                <td>@nombreSoftware</td>
+                <td class="text-center">
+                    <button class="btn btn-sm btn-outline-danger btnDesasociar"
+                            data-personalid="@a.PersonalId"
+                            data-softwareid="@a.SoftwareId"
+                            data-nombrepersonal="@nombrePersonal"
+                            data-nombresoftware="@nombreSoftware">
+                        <i class="mdi mdi-close"></i> Quitar
+                    </button>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+<!-- Modal de confirmación de desasociación -->
+<div class="modal fade" id="modalConfirmDesasociar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Desasociación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p id="textoConfirmacion">¿Estás seguro de desasociar?</p>
+                <input type="hidden" id="modalPersonalId">
+                <input type="hidden" id="modalSoftwareId">
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button class="btn btn-danger" id="btnConfirmarDesasociacion">Desasociar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    document.addEventListener("DOMContentLoaded", () => {
+        const filtroLicencia = document.getElementById("filtroLicencia");
+        const busquedaPersonal = document.getElementById("busquedaPersonal");
+        const tabla = document.getElementById("tablaAsignaciones").getElementsByTagName("tbody")[0];
+
+        function filtrarTabla() {
+            const textoPersonal = busquedaPersonal.value.toLowerCase();
+            const licenciaSeleccionada = filtroLicencia.value;
+
+            Array.from(tabla.rows).forEach(row => {
+                const nombre = row.cells[0].textContent.toLowerCase();
+                const software = row.cells[1].textContent;
+                const coincideNombre = nombre.includes(textoPersonal);
+                const coincideLicencia = licenciaSeleccionada === "" || software === licenciaSeleccionada;
+                row.style.display = coincideNombre && coincideLicencia ? "" : "none";
+            });
+        }
+
+        filtroLicencia.addEventListener("change", filtrarTabla);
+        busquedaPersonal.addEventListener("input", filtrarTabla);
+
+        let modal = new bootstrap.Modal(document.getElementById("modalConfirmDesasociar"));
+        let texto = document.getElementById("textoConfirmacion");
+        let inputPersonal = document.getElementById("modalPersonalId");
+        let inputSoftware = document.getElementById("modalSoftwareId");
+        let btnConfirmar = document.getElementById("btnConfirmarDesasociacion");
+
+        document.querySelectorAll(".btnDesasociar").forEach(btn => {
+            btn.addEventListener("click", () => {
+                const nombre = btn.dataset.nombrepersonal;
+                const software = btn.dataset.nombresoftware;
+
+                texto.textContent = `¿Estás seguro de desasociar la licencia "${software}" del usuario "${nombre}"?`;
+                inputPersonal.value = btn.dataset.personalid;
+                inputSoftware.value = btn.dataset.softwareid;
+
+                modal.show();
+                btnConfirmar.dataset.rowref = btn.closest('tr').rowIndex;
+            });
+        });
+
+        btnConfirmar.addEventListener("click", async () => {
+            const personalId = inputPersonal.value;
+            const softwareId = inputSoftware.value;
+
+            const res = await fetch('/Software/Desasociar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ personalId, softwareId })
+            });
+
+            if (res.ok) {
+                modal.hide();
+                const fila = [...tabla.rows].find(r =>
+                    r.cells[0].textContent.trim() === texto.textContent.match(/usuario \"(.+?)\"/)[1] &&
+                    r.cells[1].textContent.trim() === texto.textContent.match(/licencia \"(.+?)\"/)[1]
+                );
+                if (fila) fila.remove();
+            } else {
+                alert("Error al desasociar la licencia.");
+            }
+        });
+    });
+</script>
+}

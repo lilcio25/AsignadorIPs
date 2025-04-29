@@ -1,0 +1,271 @@
+@model List<ASIGNADORIPS.Models.Software>
+@{
+    ViewData["Title"] = "Listado de Licencias de Software";
+    Layout = "_Layout";
+
+    bool algunaAlertaActiva = Model.Any(s => s.Notificar);
+    string iconoCampanaGeneral = algunaAlertaActiva ? "mdi-bell-ring" : "mdi-bell-ring-outline";
+}
+
+<h2 class="mb-4 d-flex justify-content-between align-items-center">
+    Listado de Licencias de Software
+    <div>
+        <button class="btn btn-sm btn-secondary me-2" data-bs-toggle="modal" data-bs-target="#modalConfigAlertas">
+            <i id="iconoCampana" class="mdi @iconoCampanaGeneral"></i> Configurar Alertas
+        </button>
+        <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#modalAgregarSoftware">
+            <i class="mdi mdi-plus"></i> Nueva Licencia
+        </button>
+    </div>
+</h2>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-hover table-bordered align-middle text-nowrap">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th style="width: 40px;"></th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Orden Compra</th>
+                        <th>Licencias</th>
+                        <th>Disponibles</th>
+                        <th>Costo</th>
+                        <th>Fecha Adq.</th>
+                        <th>Expira</th>
+                        <th>Alerta</th>
+                        <th style="width: 40px;"></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var s in Model)
+                    {
+                        var claseIcono = s.Notificar ? "mdi-bell-ring text-warning" : "mdi-bell-ring-outline text-muted";
+                        <tr data-id="@s.Id">
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-danger rounded-circle btnEliminarLicencia"
+                                        data-nombre="@s.Nombre"
+                                        data-id="@s.Id"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEliminar">
+                                    <i class="mdi mdi-delete"></i>
+                                </button>
+                            </td>
+                            <td>@s.Nombre</td>
+                            <td>@(string.IsNullOrWhiteSpace(s.Descripcion) ? "-" : s.Descripcion)</td>
+                            <td>@s.OrdenCompra</td>
+                            <td>@s.CantidadLicencias</td>
+                            <td>@s.LicenciasDisponibles</td>
+                            <td>$@s.CostoTotal.ToString("N0")</td>
+                            <td>@s.FechaAdquisicion.ToString("yyyy-MM-dd")</td>
+                            <td>@s.FechaExpiracion.ToString("yyyy-MM-dd")</td>
+                            <td class="text-center">
+                                <i class="mdi @claseIcono fs-5"></i>
+                            </td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-secondary btnEditarLicencia"
+                                        data-id="@s.Id"
+                                        data-nombre="@s.Nombre"
+                                        data-descripcion="@s.Descripcion"
+                                        data-ordencompra="@s.OrdenCompra"
+                                        data-cantidad="@s.CantidadLicencias"
+                                        data-disponibles="@s.LicenciasDisponibles"
+                                        data-costo="@s.CostoTotal"
+                                        data-fechaadq="@s.FechaAdquisicion.ToString("yyyy-MM-dd")"
+                                        data-fechaexp="@s.FechaExpiracion.ToString("yyyy-MM-dd")"
+                                        data-bs-toggle="modal"
+                                        data-bs-target="#modalEditar">
+                                    <i class="mdi mdi-pencil"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Agregar Nueva Licencia -->
+<div class="modal fade" id="modalAgregarSoftware" tabindex="-1" aria-labelledby="modalAgregarSoftwareLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content border-primary">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title" id="modalAgregarSoftwareLabel">Agregar Nueva Licencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <form id="formAgregarLicencia">
+                <div class="modal-body">
+                    <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" id="nuevoNombre" required /></div>
+                    <div class="mb-2"><label>Descripción</label><input type="text" class="form-control" id="nuevoDescripcion" /></div>
+                    <div class="mb-2"><label>Orden de Compra</label><input type="text" class="form-control" id="nuevoOrdenCompra" /></div>
+                    <div class="mb-2"><label>Cantidad de Licencias</label><input type="number" class="form-control" id="nuevoCantidad" required /></div>
+                    <div class="mb-2"><label>Costo Total</label><input type="number" class="form-control" id="nuevoCosto" required /></div>
+                    <div class="mb-2"><label>Fecha de Adquisición</label><input type="date" class="form-control" id="nuevoFechaAdq" required /></div>
+                    <div class="mb-2"><label>Fecha de Expiración</label><input type="date" class="form-control" id="nuevoFechaExp" required /></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-success" id="btnGuardarNuevaLicencia">Guardar</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Editar Licencia -->
+<div class="modal fade" id="modalEditar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-primary text-white">
+                <h5 class="modal-title">Editar Licencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formEditarLicencia">
+                    <input type="hidden" id="editId" />
+                    <div class="mb-2"><label>Nombre</label><input type="text" class="form-control" id="editNombre" required /></div>
+                    <div class="mb-2"><label>Descripción</label><input type="text" class="form-control" id="editDescripcion" /></div>
+                    <div class="mb-2"><label>Orden de Compra</label><input type="text" class="form-control" id="editOrdenCompra" /></div>
+                    <div class="mb-2"><label>Cantidad de Licencias</label><input type="number" class="form-control" id="editCantidad" /></div>
+                    <div class="mb-2"><label>Disponibles</label><input type="number" class="form-control" id="editDisponibles" /></div>
+                    <div class="mb-2"><label>Costo Total</label><input type="number" class="form-control" id="editCosto" /></div>
+                    <div class="mb-2"><label>Fecha de Adquisición</label><input type="date" class="form-control" id="editFechaAdq" /></div>
+                    <div class="mb-2"><label>Fecha de Expiración</label><input type="date" class="form-control" id="editFechaExp" /></div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" id="btnGuardarCambios">Guardar Cambios</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Eliminar Licencia -->
+<div class="modal fade" id="modalEliminar" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Eliminar Licencia</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+            </div>
+            <div class="modal-body">
+                <p>Escribe el nombre para confirmar eliminación:</p>
+                <input type="text" class="form-control" id="confirmNombreInput" />
+                <input type="hidden" id="confirmId" />
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-danger" id="btnConfirmarEliminar" disabled>Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Configurar Alertas -->
+<div class="modal fade" id="modalConfigAlertas" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content border-warning">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">Configurar Alertas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="alertasContainer">Cargando...</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    const btnConfigAlertas = document.querySelector('[data-bs-target="#modalConfigAlertas"]');
+
+    btnConfigAlertas?.addEventListener("click", async () => {
+        try {
+            const container = document.getElementById('alertasContainer');
+            container.innerHTML = "Cargando...";
+
+            const res = await fetch('/Software/ObtenerAlertas');
+            const alertas = await res.json();
+
+            if (!alertas.length) {
+                container.innerHTML = "<div class='text-center text-muted'>No hay alertas configuradas.</div>";
+                return;
+            }
+
+            let html = `
+                <form id="formAlertas">
+                    <div class="table-responsive">
+                        <table class="table table-sm table-bordered align-middle text-center">
+                            <thead class="table-warning">
+                                <tr>
+                                    <th>Software</th>
+                                    <th>¿Notificar?</th>
+                                    <th>Días Antes</th>
+                                    <th>Correos de Alerta</th>
+                                </tr>
+                            </thead>
+                            <tbody>`;
+
+            alertas.forEach(a => {
+                html += `
+                    <tr>
+                        <td>${a.nombre}</td>
+                        <td><input type="checkbox" class="form-check-input" ${a.notificar ? "checked" : ""} data-id="${a.id}" data-field="notificar"></td>
+                        <td><input type="number" class="form-control form-control-sm" value="${a.diasAntesNotificar}" data-id="${a.id}" data-field="diasAntes"></td>
+                        <td><input type="text" class="form-control form-control-sm" value="${a.correosNotificacion ?? ''}" data-id="${a.id}" data-field="correos"></td>
+                    </tr>`;
+            });
+
+            html += `</tbody></table></div>
+                    <div class="text-end">
+                        <button type="button" class="btn btn-warning btn-sm" id="btnGuardarAlertas">Guardar Configuración</button>
+                    </div>
+                </form>`;
+
+            container.innerHTML = html;
+
+            document.getElementById('btnGuardarAlertas').addEventListener('click', async () => {
+                const inputs = document.querySelectorAll('#formAlertas [data-id]');
+                const data = {};
+
+                inputs.forEach(input => {
+                    const id = input.dataset.id;
+                    const field = input.dataset.field;
+                    if (!data[id]) data[id] = { id: parseInt(id) };
+
+                    if (field === "notificar") {
+                        data[id][field] = input.checked;
+                    } else if (field === "diasAntes") {
+                        data[id][field] = parseInt(input.value) || 0;
+                    } else if (field === "correos") {
+                        data[id][field] = input.value.trim();
+                    }
+                });
+
+                const payload = Object.values(data);
+
+                const res = await fetch('/Software/ActualizarAlertas', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                if (res.ok) {
+                    alert("Configuración de alertas guardada correctamente.");
+                    location.reload();
+                } else {
+                    alert("Error al guardar configuración de alertas.");
+                }
+            });
+
+        } catch (error) {
+            console.error("Error al cargar alertas:", error);
+            document.getElementById('alertasContainer').innerHTML = "<div class='text-center text-danger'>Error al cargar alertas.</div>";
+        }
+    });
+});
+</script>
+}

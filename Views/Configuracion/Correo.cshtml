@@ -1,0 +1,88 @@
+@model ASIGNADORIPS.Models.ConfiguracionCorreo
+
+@{
+    ViewData["Title"] = "Configuración de Servidor de Correo";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-4">Configuración de Servidor de Correo</h2>
+
+<form asp-action="Correo" method="post">
+    @Html.AntiForgeryToken()
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Correo Remitente</label>
+            <input type="email" name="Remitente" class="form-control" value="@Model.Remitente" required />
+        </div>
+        <div class="col-md-6">
+            <label class="form-label">Servidor SMTP</label>
+            <input type="text" name="HostSMTP" class="form-control" value="@Model.HostSMTP" required />
+        </div>
+    </div>
+
+    <div class="row mb-3">
+        <div class="col-md-4">
+            <label class="form-label">Puerto</label>
+            <input type="number" name="PuertoSMTP" class="form-control" value="@Model.PuertoSMTP" required />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Usuario SMTP</label>
+            <input type="text" name="UsuarioSMTP" class="form-control" value="@Model.UsuarioSMTP" required />
+        </div>
+        <div class="col-md-4">
+            <label class="form-label">Contraseña</label>
+            <input type="password" name="ClaveSMTP" class="form-control" value="@Model.ClaveSMTP" required />
+        </div>
+    </div>
+
+    <div class="form-check mb-3">
+        <input type="checkbox" class="form-check-input" name="UsarSSL" id="usarSSL" @(Model.UsarSSL ? "checked" : "") />
+        <label class="form-check-label" for="usarSSL">Usar SSL</label>
+    </div>
+
+    <button type="submit" class="btn btn-primary">Guardar Configuración</button>
+</form>
+
+@if (ViewBag.Mensaje != null)
+{
+    <div class="alert alert-success mt-3">@ViewBag.Mensaje</div>
+}
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger mt-3">@ViewBag.Error</div>
+}
+
+<hr class="my-4" />
+
+<h5>Probar Envío de Correo</h5>
+<form asp-action="EnviarPrueba" method="post" id="formPrueba">
+    @Html.AntiForgeryToken()
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <label class="form-label">Correo destinatario de prueba</label>
+            <input type="email" name="destinatario" class="form-control" required />
+        </div>
+        <div class="col-md-6 d-flex align-items-end">
+            <button type="submit" class="btn btn-success" id="btnProbar">Enviar Correo de Prueba</button>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const btn = document.getElementById("btnProbar");
+            const remitente = document.querySelector('input[name="Remitente"]');
+            const clave = document.querySelector('input[name="ClaveSMTP"]');
+
+            function toggleBtn() {
+                btn.disabled = !(remitente.value && clave.value);
+            }
+
+            remitente.addEventListener("input", toggleBtn);
+            clave.addEventListener("input", toggleBtn);
+
+            toggleBtn(); // Ejecuta al cargar
+        });
+    </script>
+}

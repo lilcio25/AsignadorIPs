@@ -36,7 +36,7 @@ namespace ASIGNADORIPS.Controllers
             {
                 HttpContext.Session.SetString("Usuario", user.NombreUsuario);
                 HttpContext.Session.SetString("Rol", user.Rol); // "administrador" u "observador"
-                return RedirectToAction("Index", "Equipo");
+                return RedirectToAction("Index", "Home");
             }
 
             ViewBag.Error = "Usuario o contraseña incorrectos.";
