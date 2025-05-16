@@ -18,6 +18,8 @@ namespace ASIGNADORIPS.Data
         public DbSet<UsuarioSoftware> UsuarioSoftwares { get; set; }
         public DbSet<Personal> Personal { get; set; } // Nuevo DbSet
         public DbSet<ConfiguracionCorreo> ConfiguracionCorreo { get; set; }
+        public DbSet<HistorialAccion> HistorialAcciones { get; set; }
+
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

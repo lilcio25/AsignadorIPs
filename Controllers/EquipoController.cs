@@ -6,6 +6,7 @@ using OfficeOpenXml;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System;
 
 namespace ASIGNADORIPS.Controllers
 {
@@ -24,6 +25,7 @@ namespace ASIGNADORIPS.Controllers
             if (rol == null)
                 return RedirectToAction("Login", "Account");
 
+            RegistrarHistorial("Accedió a la vista de equipos");
             var equipos = _context.Equipos.ToList();
             return View(equipos);
         }
@@ -34,6 +36,7 @@ namespace ASIGNADORIPS.Controllers
             if (rol == null || rol.Trim().ToLower() != "administrador")
                 return RedirectToAction("Index");
 
+            RegistrarHistorial("Accedió a la vista de creación de equipos");
             return View();
         }
 
@@ -54,8 +57,10 @@ namespace ASIGNADORIPS.Controllers
                 return View(equipo);
             }
 
+            string ipCompleta = $"192.9.{equipo.SegmentoRed}.{equipo.IP}";
+
             bool ipDuplicada = _context.Equipos.Any(e =>
-                e.SegmentoRed == equipo.SegmentoRed && e.IP == equipo.IP);
+                e.SegmentoRed == equipo.SegmentoRed && e.IP == ipCompleta);
 
             if (ipDuplicada)
             {
@@ -63,6 +68,7 @@ namespace ASIGNADORIPS.Controllers
                 return View(equipo);
             }
 
+            equipo.IP = ipCompleta;
             equipo.Marca ??= "---";
             equipo.Procesador ??= "---";
             equipo.RAM ??= "---";
@@ -77,6 +83,7 @@ namespace ASIGNADORIPS.Controllers
             _context.Equipos.Add(equipo);
             _context.SaveChanges();
 
+            RegistrarHistorial($"Registró equipo manualmente: {equipo.NombreEquipo} - IP {equipo.IP}");
             return RedirectToAction("Index");
         }
 
@@ -90,6 +97,8 @@ namespace ASIGNADORIPS.Controllers
             if (archivoExcel == null || archivoExcel.Length == 0)
                 return RedirectToAction("Create");
 
+            int insertados = 0;
+
             using var stream = new MemoryStream();
             archivoExcel.CopyTo(stream);
             stream.Position = 0;
@@ -101,9 +110,14 @@ namespace ASIGNADORIPS.Controllers
 
             for (int row = 2; row <= hoja.Dimension.End.Row; row++)
             {
+                var piso = int.TryParse(hoja.Cells[row, 1].Text, out int p) ? p : 0;
+                var segmento = hoja.Cells[row, 10].Text ?? "---";
+                var ultimoIP = hoja.Cells[row, 11].Text ?? "---";
+                var ipCompleta = $"192.9.{segmento}.{ultimoIP}";
+
                 var equipo = new Equipo
                 {
-                    Piso = int.TryParse(hoja.Cells[row, 1].Text, out int piso) ? piso : 0,
+                    Piso = piso,
                     NombreEquipo = hoja.Cells[row, 2].Text ?? "---",
                     CodigoInventario = hoja.Cells[row, 3].Text ?? "---",
                     Marca = hoja.Cells[row, 4].Text ?? "---",
@@ -112,8 +126,8 @@ namespace ASIGNADORIPS.Controllers
                     Disco = hoja.Cells[row, 7].Text ?? "---",
                     Windows = hoja.Cells[row, 8].Text ?? "---",
                     CodigoMonitor = hoja.Cells[row, 9].Text ?? "---",
-                    SegmentoRed = hoja.Cells[row, 10].Text ?? "---",
-                    IP = hoja.Cells[row, 11].Text ?? "---",
+                    SegmentoRed = segmento,
+                    IP = ipCompleta,
                     Office = hoja.Cells[row, 12].Text ?? "---",
                     UsuarioAsignado = hoja.Cells[row, 13].Text ?? "---",
                     NombreUsuario = hoja.Cells[row, 14].Text ?? "---",
@@ -121,15 +135,17 @@ namespace ASIGNADORIPS.Controllers
                 };
 
                 bool ipDuplicada = _context.Equipos.Any(e =>
-                    e.SegmentoRed == equipo.SegmentoRed && e.IP == equipo.IP);
+                    e.SegmentoRed == segmento && e.IP == ipCompleta);
 
                 if (!ipDuplicada)
                 {
                     _context.Equipos.Add(equipo);
+                    insertados++;
                 }
             }
 
             _context.SaveChanges();
+            RegistrarHistorial($"Cargó {insertados} equipos desde Excel");
             return RedirectToAction("Index");
         }
 
@@ -147,10 +163,12 @@ namespace ASIGNADORIPS.Controllers
             if (equipoDb == null)
                 return NotFound();
 
+            string ipCompleta = $"192.9.{equipo.SegmentoRed}.{equipo.IP}";
+
             if (_context.Equipos.Any(e =>
                 e.Id != equipo.Id &&
                 e.SegmentoRed == equipo.SegmentoRed &&
-                e.IP == equipo.IP))
+                e.IP == ipCompleta))
             {
                 return BadRequest("Esta IP ya está registrada en este segmento.");
             }
@@ -165,13 +183,14 @@ namespace ASIGNADORIPS.Controllers
             equipoDb.Windows = equipo.Windows ?? "---";
             equipoDb.CodigoMonitor = equipo.CodigoMonitor ?? "---";
             equipoDb.SegmentoRed = equipo.SegmentoRed ?? "---";
-            equipoDb.IP = equipo.IP ?? "---";
+            equipoDb.IP = ipCompleta;
             equipoDb.Office = equipo.Office ?? "---";
             equipoDb.UsuarioAsignado = equipo.UsuarioAsignado ?? "---";
             equipoDb.NombreUsuario = equipo.NombreUsuario ?? "---";
             equipoDb.Anydesk = equipo.Anydesk ?? "---";
 
             _context.SaveChanges();
+            RegistrarHistorial($"Editó equipo: {equipo.NombreEquipo} - IP {ipCompleta}");
             return Json(new { success = true });
         }
 
@@ -189,6 +208,7 @@ namespace ASIGNADORIPS.Controllers
             _context.Equipos.Remove(equipo);
             _context.SaveChanges();
 
+            RegistrarHistorial($"Eliminó equipo: {equipo.NombreEquipo} - IP {equipo.IP}");
             return Json(new { success = true });
         }
 
@@ -202,14 +222,20 @@ namespace ASIGNADORIPS.Controllers
             if (ids == null || !ids.Any())
                 return BadRequest("No se enviaron IDs");
 
+            var eliminados = 0;
+
             foreach (var id in ids)
             {
                 var equipo = _context.Equipos.Find(id);
                 if (equipo != null)
+                {
                     _context.Equipos.Remove(equipo);
+                    eliminados++;
+                }
             }
 
             _context.SaveChanges();
+            RegistrarHistorial($"Eliminó {eliminados} equipos mediante selección múltiple");
             return Ok();
         }
 
@@ -233,15 +259,16 @@ namespace ASIGNADORIPS.Controllers
 
             var usadas = _context.Equipos
                 .Where(e => e.SegmentoRed == segmento)
-                .Select(e => e.IP)
+                .AsEnumerable()
+                .Select(e => e.IP.Split('.').Last())
                 .ToHashSet();
 
             var disponibles = new List<string>();
             for (int i = 1; i <= 255; i++)
             {
-                string ip = $"192.9.{segmento}.{i}";
-                if (!usadas.Contains(ip))
-                    disponibles.Add(ip);
+                string ultimo = i.ToString();
+                if (!usadas.Contains(ultimo))
+                    disponibles.Add(ultimo);
             }
 
             return Json(disponibles);
@@ -250,8 +277,10 @@ namespace ASIGNADORIPS.Controllers
         [HttpPost]
         public JsonResult ValidarDuplicados([FromBody] Equipo equipo)
         {
+            string ipCompleta = $"192.9.{equipo.SegmentoRed}.{equipo.IP}";
+
             bool duplicado = _context.Equipos.Any(e =>
-                e.SegmentoRed == equipo.SegmentoRed && e.IP == equipo.IP);
+                e.SegmentoRed == equipo.SegmentoRed && e.IP == ipCompleta);
 
             return Json(new
             {
@@ -273,7 +302,26 @@ namespace ASIGNADORIPS.Controllers
                 })
                 .ToList();
 
+            RegistrarHistorial("Escaneó la red local para visualizar IPs activas");
             return Json(equipos);
+        }
+
+        // 🔐 Reutilizable para registrar historial
+        private void RegistrarHistorial(string accion)
+        {
+            var usuario = HttpContext.Session.GetString("Usuario") ?? "Desconocido";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP no detectada";
+
+            var historial = new HistorialAccion
+            {
+                Fecha = DateTime.Now,
+                Usuario = usuario,
+                Accion = accion,
+                IP = ip
+            };
+
+            _context.HistorialAcciones.Add(historial);
+            _context.SaveChanges();
         }
     }
 }

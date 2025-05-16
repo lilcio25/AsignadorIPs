@@ -1,6 +1,8 @@
 using ASIGNADORIPS.Data;
 using ASIGNADORIPS.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Http;
+using System;
 using System.Linq;
 using System.Net.Mail;
 using System.Threading.Tasks;
@@ -19,6 +21,7 @@ namespace ASIGNADORIPS.Controllers
         public IActionResult Correo()
         {
             var config = _context.ConfiguracionCorreo.FirstOrDefault() ?? new ConfiguracionCorreo();
+            RegistrarHistorial("Accedió a configuración de correo");
             return View(config);
         }
 
@@ -31,6 +34,7 @@ namespace ASIGNADORIPS.Controllers
             if (existente == null)
             {
                 _context.ConfiguracionCorreo.Add(model);
+                RegistrarHistorial("Agregó configuración de correo SMTP");
             }
             else
             {
@@ -40,6 +44,8 @@ namespace ASIGNADORIPS.Controllers
                 existente.UsuarioSMTP = model.UsuarioSMTP;
                 existente.ClaveSMTP = model.ClaveSMTP;
                 existente.UsarSSL = model.UsarSSL;
+
+                RegistrarHistorial("Editó configuración de correo SMTP");
             }
 
             _context.SaveChanges();
@@ -80,6 +86,7 @@ namespace ASIGNADORIPS.Controllers
 
                 await smtp.SendMailAsync(mail);
                 ViewBag.Mensaje = $"Correo de prueba enviado a {destinatario}";
+                RegistrarHistorial($"Envió correo de prueba a: {destinatario}");
             }
             catch (System.Exception ex)
             {
@@ -87,6 +94,24 @@ namespace ASIGNADORIPS.Controllers
             }
 
             return View("Correo", config);
+        }
+
+        // 🔐 Método para registrar historial
+        private void RegistrarHistorial(string accion)
+        {
+            var usuario = HttpContext.Session.GetString("Usuario") ?? "Desconocido";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP no detectada";
+
+            var historial = new HistorialAccion
+            {
+                Fecha = DateTime.Now,
+                Usuario = usuario,
+                Accion = accion,
+                IP = ip
+            };
+
+            _context.HistorialAcciones.Add(historial);
+            _context.SaveChanges();
         }
     }
 }

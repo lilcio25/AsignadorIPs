@@ -5,6 +5,7 @@ using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.AspNetCore.Http;
+using System;
 
 namespace ASIGNADORIPS.Controllers
 {
@@ -22,6 +23,8 @@ namespace ASIGNADORIPS.Controllers
             var rol = HttpContext.Session.GetString("Rol");
             if (rol == null) return RedirectToAction("Login", "Account");
             if (rol.ToLower() != "administrador") return RedirectToAction("Index", "Equipo");
+
+            RegistrarHistorial("Ingresó a la vista de gestión de usuarios");
 
             var usuarios = _context.Usuarios.ToList();
             return View(usuarios);
@@ -41,6 +44,9 @@ namespace ASIGNADORIPS.Controllers
                 usuario.Contraseña = HashPassword(usuario.Contraseña);
                 _context.Usuarios.Add(usuario);
                 _context.SaveChanges();
+
+                RegistrarHistorial($"Creó el usuario: {usuario.NombreUsuario}");
+
                 return Ok();
             }
 
@@ -64,6 +70,9 @@ namespace ASIGNADORIPS.Controllers
             userDb.Rol = usuario.Rol;
 
             _context.SaveChanges();
+
+            RegistrarHistorial($"Editó el usuario: {usuario.NombreUsuario}");
+
             return Ok();
         }
 
@@ -78,6 +87,9 @@ namespace ASIGNADORIPS.Controllers
 
             _context.Usuarios.Remove(usuario);
             _context.SaveChanges();
+
+            RegistrarHistorial($"Eliminó el usuario: {usuario.NombreUsuario}");
+
             return Ok();
         }
 
@@ -87,6 +99,23 @@ namespace ASIGNADORIPS.Controllers
             var bytes = Encoding.UTF8.GetBytes(input);
             var hash = sha256.ComputeHash(bytes);
             return Convert.ToBase64String(hash);
+        }
+
+        private void RegistrarHistorial(string accion)
+        {
+            var usuario = HttpContext.Session.GetString("Usuario") ?? "Desconocido";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP no detectada";
+
+            var historial = new HistorialAccion
+            {
+                Fecha = DateTime.Now,
+                Usuario = usuario,
+                Accion = accion,
+                IP = ip
+            };
+
+            _context.HistorialAcciones.Add(historial);
+            _context.SaveChanges();
         }
     }
 }

@@ -91,6 +91,11 @@
                                         <i class="mdi mdi-account-check-outline"></i> Personal
                                     </a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link @(controller == "Software" && action == "Historial" ? "active" : "")" href="@Url.Action("Historial", "Software")">
+                                        <i class="mdi mdi-history"></i> Historial
+                                    </a>
+                                </li>
                             </ul>
                         </div>
                     </li>
@@ -125,6 +130,7 @@
                             </ul>
                         </div>
                     </li>
+
                 }
             </ul>
         </nav>

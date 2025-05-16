@@ -52,36 +52,25 @@
                                     <i class="mdi mdi-delete"></i>
                                 </button>
                             </td>
-                            <td>@s.Nombre</td>
-                            <td>@(string.IsNullOrWhiteSpace(s.Descripcion) ? "-" : s.Descripcion)</td>
-                            <td>@s.OrdenCompra</td>
-                            <td>@s.CantidadLicencias</td>
-                            <td>@s.LicenciasDisponibles</td>
-                            <td>$@s.CostoTotal.ToString("N0")</td>
-                            <td>@s.FechaAdquisicion.ToString("yyyy-MM-dd")</td>
-                            <td>@s.FechaExpiracion.ToString("yyyy-MM-dd")</td>
+                            <td data-campo="nombre">@s.Nombre</td>
+                            <td data-campo="descripcion">@s.Descripcion</td>
+                            <td data-campo="ordenCompra">@s.OrdenCompra</td>
+                            <td data-campo="cantidadLicencias">@s.CantidadLicencias</td>
+                            <td data-campo="licenciasDisponibles">@s.LicenciasDisponibles</td>
+                            <td data-campo="costoTotal">$@s.CostoTotal.ToString("N0")</td>
+                            <td data-campo="fechaAdquisicion">@s.FechaAdquisicion.ToString("yyyy-MM-dd")</td>
+                            <td data-campo="fechaExpiracion">@s.FechaExpiracion.ToString("yyyy-MM-dd")</td>
                             <td class="text-center">
                                 <i class="mdi @claseIcono fs-5"></i>
                             </td>
                             <td class="text-center">
-                                <button class="btn btn-sm btn-outline-secondary btnEditarLicencia"
-                                        data-id="@s.Id"
-                                        data-nombre="@s.Nombre"
-                                        data-descripcion="@s.Descripcion"
-                                        data-ordencompra="@s.OrdenCompra"
-                                        data-cantidad="@s.CantidadLicencias"
-                                        data-disponibles="@s.LicenciasDisponibles"
-                                        data-costo="@s.CostoTotal"
-                                        data-fechaadq="@s.FechaAdquisicion.ToString("yyyy-MM-dd")"
-                                        data-fechaexp="@s.FechaExpiracion.ToString("yyyy-MM-dd")"
-                                        data-bs-toggle="modal"
-                                        data-bs-target="#modalEditar">
-                                    <i class="mdi mdi-pencil"></i>
-                                </button>
+                                <button class="btn btn-sm btn-outline-secondary btn-editar"><i class="mdi mdi-pencil"></i></button>
+                                <button class="btn btn-sm btn-outline-success btn-guardar d-none"><i class="mdi mdi-check"></i></button>
+                                <button class="btn btn-sm btn-outline-warning btn-cancelar d-none"><i class="mdi mdi-close"></i></button>
                             </td>
                         </tr>
                     }
-                </tbody>
+                    </tbody>
             </table>
         </div>
     </div>
@@ -182,6 +171,7 @@
 document.addEventListener("DOMContentLoaded", function () {
     const btnConfigAlertas = document.querySelector('[data-bs-target="#modalConfigAlertas"]');
 
+    // === Cargar configuración de alertas ===
     btnConfigAlertas?.addEventListener("click", async () => {
         try {
             const container = document.getElementById('alertasContainer');
@@ -228,29 +218,32 @@ document.addEventListener("DOMContentLoaded", function () {
             container.innerHTML = html;
 
             document.getElementById('btnGuardarAlertas').addEventListener('click', async () => {
-                const inputs = document.querySelectorAll('#formAlertas [data-id]');
-                const data = {};
+                const rows = document.querySelectorAll('#formAlertas tbody tr');
+                const data = [];
 
-                inputs.forEach(input => {
-                    const id = input.dataset.id;
-                    const field = input.dataset.field;
-                    if (!data[id]) data[id] = { id: parseInt(id) };
+                for (let row of rows) {
+                    const id = row.querySelector('[data-field="notificar"]').dataset.id;
+                    const notificar = row.querySelector('[data-field="notificar"]').checked;
+                    const dias = parseInt(row.querySelector('[data-field="diasAntes"]').value) || 0;
+                    const correos = row.querySelector('[data-field="correos"]').value.trim();
 
-                    if (field === "notificar") {
-                        data[id][field] = input.checked;
-                    } else if (field === "diasAntes") {
-                        data[id][field] = parseInt(input.value) || 0;
-                    } else if (field === "correos") {
-                        data[id][field] = input.value.trim();
+                    if (notificar && (dias <= 0 || correos === "")) {
+                        alert("Debes indicar días y correos para todos los softwares con notificación activada.");
+                        return;
                     }
-                });
 
-                const payload = Object.values(data);
+                    data.push({
+                        id: parseInt(id),
+                        notificar,
+                        diasAntes: dias,
+                        correos
+                    });
+                }
 
                 const res = await fetch('/Software/ActualizarAlertas', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(payload)
+                    body: JSON.stringify(data)
                 });
 
                 if (res.ok) {
@@ -265,6 +258,149 @@ document.addEventListener("DOMContentLoaded", function () {
             console.error("Error al cargar alertas:", error);
             document.getElementById('alertasContainer').innerHTML = "<div class='text-center text-danger'>Error al cargar alertas.</div>";
         }
+    });
+
+    // === Guardar nueva licencia desde el modal ===
+    document.getElementById("btnGuardarNuevaLicencia")?.addEventListener("click", async () => {
+        const nombre = document.getElementById("nuevoNombre").value.trim();
+        const descripcion = document.getElementById("nuevoDescripcion").value.trim();
+        const ordenCompra = document.getElementById("nuevoOrdenCompra").value.trim();
+        const cantidad = parseInt(document.getElementById("nuevoCantidad").value);
+        const costo = parseFloat(document.getElementById("nuevoCosto").value);
+        const fechaAdq = document.getElementById("nuevoFechaAdq").value;
+        const fechaExp = document.getElementById("nuevoFechaExp").value;
+
+        if (!nombre || isNaN(cantidad) || isNaN(costo) || !fechaAdq || !fechaExp) {
+            alert("Por favor completa todos los campos requeridos.");
+            return;
+        }
+
+        const nuevaLicencia = {
+            nombre,
+            descripcion,
+            ordenCompra,
+            cantidadLicencias: cantidad,
+            costoTotal: costo,
+            fechaAdquisicion: fechaAdq,
+            fechaExpiracion: fechaExp,
+            notificar: false
+        };
+
+        try {
+            const res = await fetch("/Software/AgregarSoftware", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(nuevaLicencia)
+            });
+
+            if (res.ok) {
+                alert("Licencia agregada correctamente.");
+                location.reload();
+            } else {
+                alert("Error al guardar la licencia.");
+            }
+        } catch (err) {
+            console.error("Error al guardar licencia:", err);
+            alert("Ocurrió un error inesperado.");
+        }
+    });
+
+    // === Confirmar eliminación: validar nombre ===
+    const btnsEliminar = document.querySelectorAll(".btnEliminarLicencia");
+    const confirmInput = document.getElementById("confirmNombreInput");
+    const confirmId = document.getElementById("confirmId");
+    const btnConfirmarEliminar = document.getElementById("btnConfirmarEliminar");
+
+    btnsEliminar.forEach(btn => {
+        btn.addEventListener("click", () => {
+            const nombre = btn.dataset.nombre;
+            const id = btn.dataset.id;
+
+            confirmInput.value = "";
+            confirmInput.dataset.nombre = nombre;
+            confirmId.value = id;
+            btnConfirmarEliminar.disabled = true;
+        });
+    });
+
+    confirmInput.addEventListener("input", () => {
+        const esperado = confirmInput.dataset.nombre;
+        btnConfirmarEliminar.disabled = confirmInput.value.trim() !== esperado;
+    });
+
+    btnConfirmarEliminar.addEventListener("click", async () => {
+        const id = confirmId.value;
+        const res = await fetch(`/Software/EliminarLicencia/${id}`, {
+            method: "POST"
+        });
+
+        if (res.ok) {
+            alert("Licencia eliminada correctamente.");
+            location.reload();
+        } else {
+            alert("Error al eliminar la licencia.");
+        }
+    });
+
+    // === Edición inline (nombre, fechas, cantidades, etc.) ===
+    document.querySelectorAll("tbody tr").forEach(fila => {
+        const btnEditar = fila.querySelector(".btnEditarLicencia");
+        const id = fila.dataset.id;
+
+        btnEditar?.addEventListener("click", () => {
+            if (fila.classList.contains("editando")) return;
+            fila.classList.add("editando");
+
+            const campos = [
+                "Nombre", "Descripcion", "OrdenCompra", "CantidadLicencias",
+                "LicenciasDisponibles", "CostoTotal", "FechaAdquisicion", "FechaExpiracion"
+            ];
+
+            campos.forEach((campo, i) => {
+                const celda = fila.children[i + 1]; // La primera celda es para eliminar
+                const valorOriginal = celda.innerText.trim();
+                const tipo = campo.toLowerCase().includes("fecha") ? "date" :
+                             campo.toLowerCase().includes("costo") || campo.toLowerCase().includes("cantidad") ? "number" : "text";
+                celda.innerHTML = `<input type="${tipo}" class="form-control form-control-sm" value="${valorOriginal}" />`;
+            });
+
+            const btns = fila.children[fila.children.length - 1];
+            btns.innerHTML = `
+                <button class="btn btn-sm btn-success btnGuardarCambios"><i class="mdi mdi-content-save"></i></button>
+                <button class="btn btn-sm btn-secondary btnCancelarEdicion"><i class="mdi mdi-cancel"></i></button>`;
+
+            btns.querySelector(".btnGuardarCambios").addEventListener("click", async () => {
+                const inputs = fila.querySelectorAll("input");
+                const data = {
+                    id: parseInt(id),
+                    nombre: inputs[0].value,
+                    descripcion: inputs[1].value,
+                    ordenCompra: inputs[2].value,
+                    cantidadLicencias: parseInt(inputs[3].value),
+                    licenciasDisponibles: parseInt(inputs[4].value),
+                    costoTotal: parseFloat(inputs[5].value),
+                    fechaAdquisicion: inputs[6].value,
+                    fechaExpiracion: inputs[7].value
+                };
+
+                const res = await fetch("/Software/EditarSoftware", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(data)
+                });
+
+                if (res.ok) {
+                    alert("Cambios guardados correctamente.");
+                    location.reload();
+                } else {
+                    alert("Error al guardar cambios.");
+                }
+            });
+
+            btns.querySelector(".btnCancelarEdicion").addEventListener("click", () => {
+                location.reload();
+            });
+        });
     });
 });
 </script>

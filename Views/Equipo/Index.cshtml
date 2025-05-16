@@ -17,18 +17,18 @@
                 <div class="row">
                     <div class="col-md-4 mb-2">
                         <label class="form-label fw-semibold">Piso</label>
-                        <select class="form-select form-select-sm filtro" data-col="1">
+                        <select class="form-select form-select-sm filtro" data-columna="piso">
                             <option value="">Todos</option>
                             @for (int i = 1; i <= 11; i++) { <option value="@i">@i</option> }
                         </select>
                     </div>
                     <div class="col-md-4 mb-2">
                         <label class="form-label fw-semibold">Nombre</label>
-                        <input type="text" class="form-control form-control-sm filtro" data-col="2" placeholder="Buscar...">
+                        <input type="text" class="form-control form-control-sm filtro" data-columna="nombre" placeholder="Buscar...">
                     </div>
                     <div class="col-md-4 mb-2">
                         <label class="form-label fw-semibold">Usuario</label>
-                        <input type="text" class="form-control form-control-sm filtro" data-col="6" placeholder="Buscar...">
+                        <input type="text" class="form-control form-control-sm filtro" data-columna="usuario" placeholder="Buscar...">
                     </div>
                 </div>
             </div>
@@ -64,32 +64,32 @@
                     @foreach (var equipo in Model)
                     {
                         <tr data-id="@equipo.Id">
-                            @if (rol == "administrador")
-                            {
-                                <td><input type="checkbox" class="checkFila" value="@equipo.Id" /></td>
-                            }
-                            <td>@equipo.Piso</td>
-                            <td>@equipo.NombreEquipo</td>
-                            <td>@equipo.CodigoInventario</td>
-                            <td>@equipo.SegmentoRed</td>
-                            <td>@equipo.IP</td>
-                            <td>@equipo.UsuarioAsignado</td>
-                            <td>@equipo.NombreUsuario</td>
-                            <td>@equipo.Anydesk</td>
+                        @if (rol == "administrador")
+                        {
+                            <td><input type="checkbox" class="checkFila" value="@equipo.Id" /></td>
+                        }
+                        <td data-campo="Piso" data-columna="piso">@equipo.Piso</td>
+                        <td data-campo="NombreEquipo" data-columna="nombre">@equipo.NombreEquipo</td>
+                        <td data-campo="CodigoInventario">@equipo.CodigoInventario</td>
+                        <td data-campo="SegmentoRed">@equipo.SegmentoRed</td>
+                        <td data-campo="IP">@(equipo.IP?.Split('.').Last())</td>
+                        <td data-campo="UsuarioAsignado" data-columna="usuario">@equipo.UsuarioAsignado</td>
+                        <td data-campo="NombreUsuario">@equipo.NombreUsuario</td>
+                        <td data-campo="Anydesk">@equipo.Anydesk</td>
+                        <td class="text-center">
+                            <button type="button" class="btn btn-sm btn-info btn-toggle-detalle">
+                                <i class="mdi mdi-chevron-down"></i>
+                            </button>
+                        </td>
+                        @if (rol == "administrador")
+                        {
                             <td class="text-center">
-                                <button type="button" class="btn btn-sm btn-info btn-toggle-detalle">
-                                    <i class="mdi mdi-chevron-down"></i>
-                                </button>
+                                <button class="btn btn-sm btn-primary btn-editar"><i class="mdi mdi-pencil"></i></button>
+                                <button class="btn btn-sm btn-success btn-guardar d-none"><i class="mdi mdi-content-save"></i></button>
+                                <button class="btn btn-sm btn-secondary btn-cancelar d-none"><i class="mdi mdi-close-circle-outline"></i></button>
                             </td>
-                            @if (rol == "administrador")
-                            {
-                                <td class="text-center">
-                                    <button class="btn btn-sm btn-primary btn-editar"><i class="mdi mdi-pencil"></i></button>
-                                    <button class="btn btn-sm btn-success btn-guardar d-none"><i class="mdi mdi-content-save"></i></button>
-                                    <button class="btn btn-sm btn-secondary btn-cancelar d-none"><i class="mdi mdi-close-circle-outline"></i></button>
-                                </td>
-                            }
-                        </tr>
+                        }
+                    </tr>
                         <!-- Fila de detalles ocultos -->
                         <tr class="fila-detalle bg-light d-none" data-id="@equipo.Id">
                             <td colspan="@(rol == "administrador" ? "11" : "10")">
@@ -143,7 +143,9 @@
                         if (resp.ok) {
                             seleccionados.forEach(id => {
                                 const fila = document.querySelector(`tr[data-id='${id}']`);
+                                const filaDetalle = fila?.nextElementSibling;
                                 if (fila) fila.remove();
+                                if (filaDetalle?.classList.contains("fila-detalle")) filaDetalle.remove();
                             });
                         } else {
                             alert("Error al eliminar los equipos seleccionados.");
@@ -171,23 +173,25 @@
 
             if (!btnEditar) return;
 
-            let valoresOriginales = [];
+            let valoresOriginales = {};
 
             btnEditar?.addEventListener("click", () => {
-                valoresOriginales = [];
+                valoresOriginales = {};
+                const celdas = fila.querySelectorAll("td[data-campo]");
 
-                const celdas = fila.querySelectorAll("td:not(:first-child):not(:last-child):not(:nth-last-child(2))");
                 celdas.forEach(celda => {
-                    const texto = celda.innerText.trim();
-                    valoresOriginales.push(texto);
-                    celda.innerHTML = `<input type="text" class="form-control form-control-sm" value="${texto}" />`;
+                    const campo = celda.getAttribute("data-campo");
+                    const valor = celda.innerText.trim();
+                    valoresOriginales[campo] = valor;
+                    celda.innerHTML = `<input type="text" class="form-control form-control-sm" value="${valor}" />`;
                 });
 
                 const filaDetalle = document.querySelector(`.fila-detalle[data-id='${fila.dataset.id}']`);
                 if (filaDetalle) {
                     filaDetalle.querySelectorAll(".detalle").forEach(span => {
+                        const campo = span.getAttribute("data-campo");
                         const valor = span.innerText.trim();
-                        valoresOriginales.push(valor);
+                        valoresOriginales[campo] = valor;
                         span.innerHTML = `<input type="text" class="form-control form-control-sm" value="${valor}" />`;
                     });
                 }
@@ -198,15 +202,17 @@
             });
 
             btnCancelar?.addEventListener("click", () => {
-                const celdas = fila.querySelectorAll("td:not(:first-child):not(:last-child):not(:nth-last-child(2))");
-                celdas.forEach((celda, index) => {
-                    celda.innerHTML = valoresOriginales[index];
+                const celdas = fila.querySelectorAll("td[data-campo]");
+                celdas.forEach(celda => {
+                    const campo = celda.getAttribute("data-campo");
+                    celda.innerText = valoresOriginales[campo];
                 });
 
                 const filaDetalle = document.querySelector(`.fila-detalle[data-id='${fila.dataset.id}']`);
                 if (filaDetalle) {
-                    filaDetalle.querySelectorAll(".detalle").forEach((span, idx) => {
-                        span.innerHTML = valoresOriginales[celdas.length + idx];
+                    filaDetalle.querySelectorAll(".detalle").forEach(span => {
+                        const campo = span.getAttribute("data-campo");
+                        span.innerText = valoresOriginales[campo];
                     });
                 }
 
@@ -216,27 +222,20 @@
             });
 
             btnGuardar?.addEventListener("click", () => {
-                const inputs = fila.querySelectorAll("input");
+                const inputs = fila.querySelectorAll("td[data-campo] input");
                 const inputsDetalle = document.querySelector(`.fila-detalle[data-id='${fila.dataset.id}']`)?.querySelectorAll("input") || [];
 
-                const data = {
-                    id: fila.dataset.id,
-                    piso: inputs[0].value || "---",
-                    nombreEquipo: inputs[1].value || "---",
-                    codigoInventario: inputs[2].value || "---",
-                    segmentoRed: inputs[3].value || "---",
-                    ip: inputs[4].value || "---",
-                    usuarioAsignado: inputs[5].value || "---",
-                    nombreUsuario: inputs[6].value || "---",
-                    anydesk: inputs[7].value || "---",
-                    marca: inputsDetalle[0]?.value || "---",
-                    procesador: inputsDetalle[1]?.value || "---",
-                    ram: inputsDetalle[2]?.value || "---",
-                    disco: inputsDetalle[3]?.value || "---",
-                    windows: inputsDetalle[4]?.value || "---",
-                    codigoMonitor: inputsDetalle[5]?.value || "---",
-                    office: inputsDetalle[6]?.value || "---"
-                };
+                const data = { id: fila.dataset.id };
+
+                inputs.forEach(input => {
+                    const campo = input.closest("td").getAttribute("data-campo");
+                    data[campo] = input.value || "---";
+                });
+
+                inputsDetalle.forEach(input => {
+                    const campo = input.closest("span").getAttribute("data-campo");
+                    data[campo] = input.value || "---";
+                });
 
                 fetch("/Equipo/UpdateInline", {
                     method: "POST",
@@ -245,6 +244,36 @@
                 }).then(resp => {
                     if (resp.ok) location.reload();
                     else alert("Error al guardar cambios.");
+                });
+            });
+        });
+
+        // Filtro funcional por columnas con data-columna
+        const filtros = document.querySelectorAll(".filtro");
+        filtros.forEach(filtro => {
+            filtro.addEventListener("input", function () {
+                const tabla = document.getElementById("tablaEquipos");
+                const filas = tabla.querySelectorAll("tbody tr");
+
+                filas.forEach((fila, index) => {
+                    if (fila.classList.contains("fila-detalle")) return;
+                    const filaDetalle = fila.nextElementSibling;
+                    let mostrar = true;
+
+                    filtros.forEach(f => {
+                        const campo = f.getAttribute("data-columna");
+                        const valorFiltro = f.value.toLowerCase();
+                        const celda = fila.querySelector(`td[data-columna='${campo}']`);
+
+                        if (valorFiltro && celda && !celda.innerText.toLowerCase().includes(valorFiltro)) {
+                            mostrar = false;
+                        }
+                    });
+
+                    fila.style.display = mostrar ? "" : "none";
+                    if (filaDetalle && filaDetalle.classList.contains("fila-detalle")) {
+                        filaDetalle.style.display = mostrar ? "" : "none";
+                    }
                 });
             });
         });

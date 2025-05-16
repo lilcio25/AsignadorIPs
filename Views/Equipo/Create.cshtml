@@ -145,18 +145,13 @@
                 fetch(`/Equipo/ObtenerIpsDisponibles?piso=${piso}`)
                     .then(res => res.ok ? res.json() : Promise.reject("Error"))
                     .then(data => {
-                        ipSelect.innerHTML = "";
-                        if (data.length === 0) {
-                            ipSelect.innerHTML = "<option value=''>No hay IPs disponibles</option>";
-                        } else {
-                            ipSelect.innerHTML = "<option value=''>Seleccione una IP</option>";
-                            data.forEach(ip => {
-                                const option = document.createElement("option");
-                                option.value = ip;
-                                option.textContent = ip;
-                                ipSelect.appendChild(option);
-                            });
-                        }
+                        ipSelect.innerHTML = "<option value=''>Seleccione una IP</option>";
+                        data.forEach(ip => {
+                            const option = document.createElement("option");
+                            option.value = ip;
+                            option.textContent = ip;
+                            ipSelect.appendChild(option);
+                        });
                     })
                     .catch(() => {
                         ipSelect.innerHTML = "<option value=''>Error al obtener IPs</option>";
@@ -170,15 +165,23 @@
             const ip = document.getElementById("IP").value;
             const segmento = document.getElementById("SegmentoRed").value;
 
+            if (!ip || !segmento) {
+                mostrarPopup("Debe seleccionar un segmento y una IP válida.");
+                return;
+            }
+
             fetch("/Equipo/ValidarDuplicados", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ IP: ip, SegmentoRed: segmento })
+                body: JSON.stringify({
+                    SegmentoRed: segmento,
+                    IP: `192.9.${segmento}.${ip}`
+                })
             })
             .then(res => res.json())
             .then(data => {
                 if (data.duplicado) {
-                    mostrarPopup("Esta IP ya se encuentra registrada.");
+                    mostrarPopup(data.mensaje);
                 } else {
                     form.submit();
                 }

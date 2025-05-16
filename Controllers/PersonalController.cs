@@ -5,6 +5,8 @@ using OfficeOpenXml;
 using System.IO;
 using System.Linq;
 using System.Text.Json;
+using Microsoft.AspNetCore.Http;
+using System;
 
 namespace ASIGNADORIPS.Controllers
 {
@@ -19,6 +21,7 @@ namespace ASIGNADORIPS.Controllers
 
         public IActionResult Index()
         {
+            RegistrarHistorial("Accedió a la vista de gestión de personal");
             var personal = _context.Personal.ToList();
             return View("~/Views/Usuario/personal.cshtml", personal);
         }
@@ -31,6 +34,7 @@ namespace ASIGNADORIPS.Controllers
             {
                 _context.Personal.Add(persona);
                 _context.SaveChanges();
+                RegistrarHistorial($"Agregó al personal: {persona.NombreCompleto}");
                 return RedirectToAction("Index");
             }
 
@@ -61,6 +65,7 @@ namespace ASIGNADORIPS.Controllers
                             return RedirectToAction("Index");
                         }
 
+                        int agregados = 0;
                         for (int row = 2; row <= sheet.Dimension.End.Row; row++)
                         {
                             var codigo = sheet.Cells[row, 1].Text.Trim();
@@ -78,12 +83,14 @@ namespace ASIGNADORIPS.Controllers
                                         NombreCompleto = nombre,
                                         CorreoFuncionario = correo
                                     });
+                                    agregados++;
                                 }
                             }
                         }
 
                         _context.SaveChanges();
                         TempData["Exito"] = "Carga masiva exitosa.";
+                        RegistrarHistorial($"Cargó masivamente {agregados} registros de personal desde Excel");
                     }
                 }
             }
@@ -106,6 +113,7 @@ namespace ASIGNADORIPS.Controllers
             existente.CorreoFuncionario = p.CorreoFuncionario;
 
             _context.SaveChanges();
+            RegistrarHistorial($"Editó al personal: {p.NombreCompleto}");
             return Ok();
         }
 
@@ -114,6 +122,10 @@ namespace ASIGNADORIPS.Controllers
         {
             if (!body.TryGetProperty("id", out var idElement) || !idElement.TryGetInt32(out var id))
                 return BadRequest("Id no válido");
+
+            var persona = _context.Personal.FirstOrDefault(p => p.Id == id);
+            if (persona != null)
+                RegistrarHistorial($"Eliminó al personal: {persona.NombreCompleto}");
 
             return EliminarPersonalYLicencias(id);
         }
@@ -125,6 +137,10 @@ namespace ASIGNADORIPS.Controllers
 
             foreach (var id in ids)
             {
+                var persona = _context.Personal.FirstOrDefault(p => p.Id == id);
+                if (persona != null)
+                    RegistrarHistorial($"Eliminó al personal: {persona.NombreCompleto}");
+
                 EliminarPersonalYLicencias(id);
             }
 
@@ -148,7 +164,25 @@ namespace ASIGNADORIPS.Controllers
             }
 
             _context.Personal.Remove(persona);
-            return Ok(); // La llamada a SaveChanges se hace fuera en EliminarMultiples
+            return Ok(); // SaveChanges se hace fuera en EliminarMultiples
+        }
+
+        // 🔐 Registro de historial
+        private void RegistrarHistorial(string accion)
+        {
+            var usuario = HttpContext.Session.GetString("Usuario") ?? "Desconocido";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP no detectada";
+
+            var historial = new HistorialAccion
+            {
+                Fecha = DateTime.Now,
+                Usuario = usuario,
+                Accion = accion,
+                IP = ip
+            };
+
+            _context.HistorialAcciones.Add(historial);
+            _context.SaveChanges();
         }
     }
 }

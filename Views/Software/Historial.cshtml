@@ -1,0 +1,83 @@
+@model List<ASIGNADORIPS.Models.HistorialAccion>
+@{
+    ViewData["Title"] = "Historial de Actividad";
+    Layout = "_Layout";
+}
+
+<h2 class="mb-4 d-flex justify-content-between align-items-center">
+    Historial de Actividad
+</h2>
+
+<div class="card mb-3">
+    <div class="card-body">
+        <form id="filtroForm" class="row g-2">
+            <div class="col-md-4">
+                <label>Filtrar por Usuario</label>
+                <input type="text" id="filtroUsuario" class="form-control form-control-sm" placeholder="Nombre de usuario..." />
+            </div>
+            <div class="col-md-3">
+                <label>Desde</label>
+                <input type="date" id="filtroDesde" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-3">
+                <label>Hasta</label>
+                <input type="date" id="filtroHasta" class="form-control form-control-sm" />
+            </div>
+            <div class="col-md-2 d-flex align-items-end">
+                <button type="button" class="btn btn-sm btn-primary w-100" onclick="filtrarTabla()">Filtrar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-sm table-bordered table-hover align-middle text-nowrap" id="tablaHistorial">
+                <thead class="table-dark text-center">
+                    <tr>
+                        <th style="width: 180px;">Fecha</th>
+                        <th style="width: 180px;">Usuario</th>
+                        <th style="width: 150px;">IP</th>
+                        <th>Acción Realizada</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var h in Model.OrderByDescending(x => x.Fecha))
+                    {
+                        <tr>
+                            <td class="fecha">@h.Fecha.ToString("yyyy-MM-dd")</td>
+                            <td class="usuario">@h.Usuario</td>
+                            <td>@h.IP</td>
+                            <td>@h.Accion</td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    function filtrarTabla() {
+        const usuario = document.getElementById("filtroUsuario").value.toLowerCase();
+        const desde = document.getElementById("filtroDesde").value;
+        const hasta = document.getElementById("filtroHasta").value;
+        const filas = document.querySelectorAll("#tablaHistorial tbody tr");
+
+        filas.forEach(fila => {
+            const usuarioFila = fila.querySelector(".usuario").innerText.toLowerCase();
+            const fechaFila = fila.querySelector(".fecha").innerText;
+
+            let visible = true;
+
+            if (usuario && !usuarioFila.includes(usuario)) visible = false;
+            if (desde && fechaFila < desde) visible = false;
+            if (hasta && fechaFila > hasta) visible = false;
+
+            fila.style.display = visible ? "" : "none";
+        });
+    }
+</script>
+}

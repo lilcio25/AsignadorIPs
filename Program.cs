@@ -4,6 +4,7 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
 using ASIGNADORIPS.Data;
 using ASIGNADORIPS.Models;
+using ASIGNADORIPS.Middlewares; // ✅ Asegúrate de tener este using
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,7 +18,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddSession();
 builder.Services.AddHttpContextAccessor();
 
-// Alertas Automaticas
+// Alertas Automáticas
 builder.Services.AddHostedService<ASIGNADORIPS.Services.AlertaLicenciasService>();
 
 var app = builder.Build();
@@ -47,6 +48,9 @@ app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseSession(); // Activar sesiones
+
+app.UseMiddleware<HistorialMiddleware>(); // ✅ Middleware personalizado para registrar historial
+
 app.UseAuthorization();
 
 // ✅ Redirección manual si no hay sesión activa
@@ -74,4 +78,3 @@ app.MapControllerRoute(
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Run();
-

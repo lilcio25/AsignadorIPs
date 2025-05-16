@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using ASIGNADORIPS.Data;
+using ASIGNADORIPS.Models;
 using System;
 using System.Linq;
 
@@ -16,12 +17,15 @@ namespace ASIGNADORIPS.Controllers
 
         public IActionResult Index()
         {
+            RegistrarHistorial("Accedió al dashboard principal");
             return View();
         }
 
         [HttpGet("/api/dashboard/kpis")]
         public IActionResult ObtenerKpis()
         {
+            RegistrarHistorial("Consultó los KPIs del dashboard");
+
             var hoy = DateTime.Today;
             var proximas = hoy.AddDays(30);
 
@@ -55,6 +59,8 @@ namespace ASIGNADORIPS.Controllers
         [HttpGet("/api/dashboard/uso-licencias")]
         public IActionResult UsoLicencias()
         {
+            RegistrarHistorial("Consultó el uso de licencias por software");
+
             var data = _context.Softwares
                 .Select(s => new
                 {
@@ -72,6 +78,8 @@ namespace ASIGNADORIPS.Controllers
         [HttpGet("/api/dashboard/asignaciones-personal")]
         public IActionResult AsignacionesPorPersona()
         {
+            RegistrarHistorial("Consultó las asignaciones por persona");
+
             var data = _context.Personal
                 .Select(p => new
                 {
@@ -82,6 +90,24 @@ namespace ASIGNADORIPS.Controllers
                 .ToList();
 
             return Json(data);
+        }
+
+        // 🔐 Reutilizable para registrar historial
+        private void RegistrarHistorial(string accion)
+        {
+            var usuario = HttpContext.Session.GetString("Usuario") ?? "Desconocido";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP no detectada";
+
+            var historial = new HistorialAccion
+            {
+                Fecha = DateTime.Now,
+                Usuario = usuario,
+                Accion = accion,
+                IP = ip
+            };
+
+            _context.HistorialAcciones.Add(historial);
+            _context.SaveChanges();
         }
     }
 }

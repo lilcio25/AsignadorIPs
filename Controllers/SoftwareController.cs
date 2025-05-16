@@ -4,6 +4,8 @@ using ASIGNADORIPS.Models;
 using ASIGNADORIPS.Models.ViewModels;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.AspNetCore.Http;
+using System;
 
 namespace ASIGNADORIPS.Controllers
 {
@@ -18,6 +20,7 @@ namespace ASIGNADORIPS.Controllers
 
         public IActionResult VistaSoft()
         {
+            RegistrarHistorial("Ingresó a la vista de licencias de software");
             var softwares = _context.Softwares.ToList();
             return View(softwares);
         }
@@ -38,6 +41,8 @@ namespace ASIGNADORIPS.Controllers
 
             _context.Softwares.Add(nuevo);
             _context.SaveChanges();
+
+            RegistrarHistorial($"Agregó una nueva licencia: {nuevo.Nombre}");
             return Ok();
         }
 
@@ -61,6 +66,8 @@ namespace ASIGNADORIPS.Controllers
             software.FechaExpiracion = softwareEditado.FechaExpiracion;
 
             _context.SaveChanges();
+
+            RegistrarHistorial($"Editó la licencia: {softwareEditado.Nombre}");
             return Ok();
         }
 
@@ -76,6 +83,8 @@ namespace ASIGNADORIPS.Controllers
 
             _context.Softwares.Remove(software);
             _context.SaveChanges();
+
+            RegistrarHistorial($"Eliminó la licencia: {software.Nombre}");
             return Ok();
         }
 
@@ -97,6 +106,7 @@ namespace ASIGNADORIPS.Controllers
             }
 
             _context.SaveChanges();
+            RegistrarHistorial("Actualizó configuraciones de alertas de licencias");
             return Ok();
         }
 
@@ -117,8 +127,16 @@ namespace ASIGNADORIPS.Controllers
             return Json(alertas);
         }
 
+        public IActionResult Historial()
+        {
+            RegistrarHistorial("Ingresó al historial de acciones");
+            var historial = _context.HistorialAcciones.ToList();
+            return View(historial);
+        }
+
         public IActionResult UsuariosSoft()
         {
+            RegistrarHistorial("Ingresó a la vista de asociación de licencias");
             var viewModel = new AsociacionLicenciasViewModel
             {
                 Personal = _context.Personal.ToList(),
@@ -152,6 +170,7 @@ namespace ASIGNADORIPS.Controllers
             }
 
             _context.SaveChanges();
+            RegistrarHistorial($"Asoció licencias al personal con ID {personalId}");
             return RedirectToAction("UsuariosSoft");
         }
 
@@ -170,6 +189,7 @@ namespace ASIGNADORIPS.Controllers
                     software.LicenciasDisponibles++;
 
                 _context.SaveChanges();
+                RegistrarHistorial($"Desasoció la licencia {software.Nombre} del personal ID {input.PersonalId}");
             }
 
             return Ok();
@@ -194,7 +214,26 @@ namespace ASIGNADORIPS.Controllers
             }
 
             _context.SaveChanges();
+            RegistrarHistorial($"Liberó todas las licencias asociadas al personal ID {personalId}");
             return Ok();
+        }
+
+        // 🔐 Registro de historial centralizado
+        private void RegistrarHistorial(string accion)
+        {
+            var usuario = HttpContext.Session.GetString("Usuario") ?? "Desconocido";
+            var ip = HttpContext.Connection.RemoteIpAddress?.ToString() ?? "IP no detectada";
+
+            var historial = new HistorialAccion
+            {
+                Fecha = DateTime.Now,
+                Usuario = usuario,
+                Accion = accion,
+                IP = ip
+            };
+
+            _context.HistorialAcciones.Add(historial);
+            _context.SaveChanges();
         }
 
         public class SoftwareAlertaDTO

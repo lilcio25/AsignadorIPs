@@ -3,6 +3,7 @@ using System;
 using ASIGNADORIPS.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -10,9 +11,10 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace AsignadorIPs.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250430201849_CrearTablaHistorial")]
+    partial class CrearTablaHistorial
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "6.0.0");
@@ -131,10 +133,6 @@ namespace AsignadorIPs.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Fecha")
-                        .HasColumnType("TEXT");
-
-                    b.Property<string>("IP")
-                        .IsRequired()
                         .HasColumnType("TEXT");
 
                     b.Property<string>("IpUsuario")
